@@ -5,7 +5,7 @@
     <item value="#placemark-blue" marker="eat" />
     <item value="#placemark-green" marker="sleep" />
     <!--
-      Rules that define how to figure marker from the title.
+      Rules that define how to figure marker from the title 1.
       Rules are applied in order. If order is not specified it is assigned automatically in order of parsing.
       Keywords (CI) are combined into the Regex "key1|key2|key3". Use '\' to escape special Regex characters.
       'regex' is applied first. E.g. "^\*.*" matches lines that start from '*'.
