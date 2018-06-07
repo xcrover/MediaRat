@@ -1,0 +1,98 @@
+﻿<UserControl x:Class="XC.MediaRat.Views.MediaSplitView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:srcv="clr-namespace:XC.MediaRat.Views"
+             xmlns:lfrm="clr-namespace:Ops.NetCoe.LightFrame"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XC.MediaRat.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid x:Name="_view" Background="{DynamicResource PanelGradientBrush}" SizeChanged="_view_SizeChanged" AllowDrop="True" Drop="_media_Drop">
+        <!--<Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" MinWidth="20" MaxWidth="{Binding ElementName=_sizeMonitor, Path=Width, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.9}"/>
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="*" MinWidth="20" />
+        </Grid.ColumnDefinitions>-->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"  />
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto" MaxHeight="100" />
+        </Grid.RowDefinitions>
+        <Line Name="_sizeMonitor" Visibility="Collapsed" Width="100" Height="100"/>
+        <Grid Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Row="0" Grid.Column="0" Margin="2,2,4,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" MinWidth="20"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Label>Source:</Label>
+                <TextBox Name="_source" Grid.Column="1" Text="{Binding Path=CurrentSource.SourcePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Grid.Column="2" Command="{Binding Path=AddSrcCmd}" MinWidth="24" Content=">>" />
+            </Grid>
+
+            <ListBox Name="_toolBar" Grid.Column="1" ItemsSource="{Binding Path=CommandVModels}" HorizontalAlignment="Right" 
+                 Style="{StaticResource HorizontalListBox}" ItemTemplate="{StaticResource CommandTemplate}" Margin="2,5,2,5"/>
+        </Grid >
+        
+        <Grid Grid.Row="3" Grid.ColumnSpan="3" Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <!--<ColumnDefinition Width="300" MinWidth="20" MaxWidth="{Binding ElementName=_sizeMonitor, Path=Width, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.9}"/>-->
+                <ColumnDefinition Width="300" MinWidth="20" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" MinWidth="20" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"  />
+            </Grid.RowDefinitions>
+
+            <ListBox Name="_trgToolBar" Grid.Column="0" ItemsSource="{Binding Path=TrgCmdVModels}" HorizontalAlignment="Right" 
+                 Style="{StaticResource HorizontalListBox}" ItemTemplate="{StaticResource CommandTemplate}" Margin="2,5,2,5"/>
+
+            <DataGrid Name="_targets" Grid.Row="1" ItemsSource="{Binding Path=CurrentSource.Targets}" Style="{DynamicResource EditGrid}" SelectedItem="{Binding Path=CurrentTarget, Mode=TwoWay}" >
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Target Name [+]" Binding="{Binding TargetFile}" 
+                                        SortMemberPath="TargetFile" CanUserSort="True" Width="*" IsReadOnly="False" 
+                                        ToolTipService.ToolTip="Start with '+' to insert source file name"/>
+                    <!--<DataGridComboBoxColumn Header="Action" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}, Path=DataContext.Transformations}" SelectedItemBinding="{Binding XCmd}" DisplayMemberPath="Title" IsReadOnly="False" />-->
+                    <DataGridComboBoxColumn Header="Action" SelectedItemBinding="{Binding XCmd}" DisplayMemberPath="Title" IsReadOnly="False">
+                        <DataGridComboBoxColumn.ElementStyle>
+                            <Style>
+                              <Setter Property="ComboBox.ItemsSource" Value="{Binding ViewModel.Transformations, RelativeSource={RelativeSource AncestorType={x:Type srcv:MediaSplitView}}}" />
+                            </Style>
+                        </DataGridComboBoxColumn.ElementStyle>
+                        <DataGridComboBoxColumn.EditingElementStyle>
+                            <Style>
+                                <Setter Property="ComboBox.ItemsSource" Value="{Binding ViewModel.Transformations, RelativeSource={RelativeSource AncestorType={x:Type srcv:MediaSplitView}}}" />
+                            </Style>
+                        </DataGridComboBoxColumn.EditingElementStyle>
+                    </DataGridComboBoxColumn>
+                    <DataGridTextColumn Header="Start" Binding="{Binding SourceFrame.Start, Converter={StaticResource TimeCodeConverter}}" SortMemberPath="SourceFrame.Start" CanUserSort="True" Width="Auto" MinWidth="20" IsReadOnly="False"/>
+                    <DataGridTextColumn Header="Stop" Binding="{Binding SourceFrame.Stop, Converter={StaticResource TimeCodeConverter}}" SortMemberPath="SourceFrame.Stop" CanUserSort="True" Width="Auto" MinWidth="20" IsReadOnly="False"/>
+                    <DataGridTextColumn Header="Duration" Binding="{Binding SourceFrame.Duration, Converter={StaticResource TimeCodeConverter}}" SortMemberPath="SourceFrame.Duration" CanUserSort="True" Width="Auto" IsReadOnly="True"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <GridSplitter Name="_splitter2" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Style="{DynamicResource GridSplitterV}" ResizeBehavior="PreviousAndNext" />
+            <srcv:MediaPlayerFView x:Name="_player" Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding ElementName=_view, Path=DataContext}" 
+                                  HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        </Grid>
+
+        <GridSplitter Grid.Row="4" Grid.ColumnSpan="3" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext"/>
+
+        <ScrollViewer Grid.Row="5" Grid.ColumnSpan="3" MaxHeight="100" MinHeight="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <srcv:StatusView x:Name="_status" DataContext="{Binding Path=Status}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

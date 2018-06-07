@@ -1,0 +1,62 @@
+﻿<Window x:Class="XC.MediaRat.Views.PopoutImage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:src="clr-namespace:XC.MediaRat.Views"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding CurrentMedia.Title}" Height="300" Width="300">
+    <Grid Name="_view" Background="{DynamicResource PanelGradientBrush}" SizeChanged="_view_SizeChanged">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+       </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <!--<ColumnDefinition Width="*" MinWidth="20" MaxWidth="{Binding ElementName=_sizeMonitor, Path=Width, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.9}"/>-->
+            <ColumnDefinition Width="*" MinWidth="20"/>
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Line Name="_sizeMonitor" Visibility="Collapsed" Width="100" Height="100"/>
+        <!--<Border Grid.Row="0"  BorderThickness="2" HorizontalAlignment="Center">-->
+        <ScrollViewer Grid.Row="0" Grid.Column="0" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                      Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}"
+                      HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Image Name="_picPreview"  Source="{Binding Path=CachedImages.CurrentImage.Content}" Stretch="Uniform" MinWidth="60" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Height="{Binding ElementName=_sizeMonitor, Path=Height, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.95}" 
+                       Width="Auto" SnapsToDevicePixels="True" 
+                       RenderTransformOrigin="0.5,0.5" 
+                      >
+                <Image.LayoutTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="_scale" ScaleX="{Binding Scale.Value}" ScaleY="{Binding Scale.Value}" />
+                    </TransformGroup>
+                </Image.LayoutTransform>
+            </Image>
+
+            <!--<Image Name="_picPreview"  Source="{Binding Path=CurrentMedia.FullName}" Stretch="Uniform" MinWidth="60" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Height="{Binding ElementName=_sizeMonitor, Path=Height, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.9}" Width="Auto" SnapsToDevicePixels="True" 
+                       RenderTransformOrigin="0.5,0.5" 
+                      >
+                <Image.LayoutTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="_scale" ScaleX="{Binding Scale.Value}" ScaleY="{Binding Scale.Value}" />
+                    </TransformGroup>
+                </Image.LayoutTransform>
+            </Image>-->
+
+        </ScrollViewer>
+        <src:MediaPlayerView x:Name="_player" DataContext="{Binding ElementName=_view, Path=DataContext}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <!--</Border>-->
+        <Grid Name="_controlPan" Grid.Row="0" Grid.Column="1" Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Slider Name="_scaleK" IsEnabled="True" IsSnapToTickEnabled="True"
+                        Height="250" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="4,10,2,2"
+                        Value="{Binding Scale.CurrentP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="0" Maximum="{Binding Scale.MaxP}" TickFrequency="1"
+                        SmallChange="1" LargeChange="2" TickPlacement="BottomRight"/>
+            <TextBlock Name="_scaleVal" Grid.Row="1" Text="{Binding Scale.Value, StringFormat={}{0:0.00}}" Foreground="LightGreen" HorizontalAlignment="Center" Margin="2,6,2,2"/>
+        </Grid>
+    </Grid>
+</Window>

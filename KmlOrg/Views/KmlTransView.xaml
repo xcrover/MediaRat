@@ -1,0 +1,139 @@
+﻿<UserControl x:Class="KmlOrg.Views.KmlTransView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:srcv="clr-namespace:KmlOrg.Views"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:KmlOrg.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid Name="_view" Background="{DynamicResource  PanelGradientBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="*"  />
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto" MaxHeight="100" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="2,2,4,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="20"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Label>Source:</Label>
+            <TextBox Name="_source" Grid.Column="1" Text="{Binding Path=CurrentFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="2" Command="{Binding Path=CmdSelectKml}" MinWidth="24" Content="Browse" />
+            <Label Grid.Row="1">Title:</Label>
+            <TextBox Name="_kmlTitle" Grid.Column="1" Grid.Row="1" Text="{Binding Path=KmlTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Label Grid.Row="2">Description:</Label>
+            <TextBox Name="_description" Grid.Row="2" Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
+                             Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             ToolTip="Description will be added to the result file" MaxHeight="56"
+                             AcceptsReturn="True"/>
+        </Grid>
+        <TabControl Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                        Background="{DynamicResource PanelGradientBrush}" ItemContainerStyle="{DynamicResource StaticTab}">
+            <TabItem Header="Text">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0">
+                        <StackPanel Orientation="Horizontal" Margin="2,2,12,2">
+                            <Label VerticalAlignment="Center">LonLat swap</Label>
+                            <CheckBox Name="_lonLatReorder" IsChecked="{Binding SwitchLonLat, Mode=TwoWay}" Style="{DynamicResource SimpleCheckBox}" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Style="{DynamicResource NormalButtonStyle}" Name="_pbParseText" Command="{Binding CmdParseText}"
+                                ToolTip="Parse text and create KML with points"
+                                >Parse</Button>
+                        <Button Style="{DynamicResource NormalButtonStyle}" Name="_pbGpxRte2Trk"  Command="{Binding CmdGpxRte2Trk}"
+                                ToolTip="Convert GPX rte to trk. This is for Wikiloc"
+                                >GPX:rte2trk</Button>
+                        <Button Style="{DynamicResource NormalButtonStyle}" Name="_pbGpxWpt2Trk"  Command="{Binding CmdGpxWpt2Trk}"
+                                ToolTip="Convert GPX wpt to trk. This is for Wikiloc"
+                                >GPX:wpt2trk</Button>
+                    </ToolBar>
+                    <TextBox Name="_text" Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
+                             Text="{Binding Path=Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             ToolTip="Each line in form title| Lon,Lat [|marker]"
+                             AcceptsReturn="True"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Table">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0">
+                        <Button Style="{DynamicResource NormalButtonStyle}" Name="_pbSaveAs" Command="{Binding CmdSaveAs}">Save as</Button>
+                    </ToolBar>
+                    <DataGrid Name="_placemarks" Grid.Row="1" Style="{DynamicResource EditGrid}" ItemsSource="{Binding Path=Placemarks}" AllowDrop="True" 
+                          IsReadOnly="False" CanUserAddRows="True" CanUserDeleteRows="True" >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Title" Binding="{Binding Title, Mode=TwoWay}"
+                                                SortMemberPath="Title" Width="Auto"/>
+                            <DataGridTextColumn Header="Coordinates" Binding="{Binding Coordinates, Mode=TwoWay}"
+                                                SortMemberPath="Coordinates" Width="Auto"/>
+                            <DataGridTextColumn Header="Style" Binding="{Binding StyleUrl, Mode=TwoWay}"
+                                                SortMemberPath="StyleUrl" Width="Auto"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description, Mode=TwoWay}"
+                                                SortMemberPath="Description" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+
+            </TabItem>
+            <TabItem Header="KML">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0">
+                        <Button Style="{DynamicResource NormalButtonStyle}" Name="_pbParseKml" Command="{Binding CmdParseText}">Parse KML</Button>
+                    </ToolBar>
+                    <TextBox Name="_kmlText" Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
+                             Text="{Binding Path=KmlText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             AcceptsReturn="True"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Settings">
+                <TextBox Name="_xmlSettings" Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
+                             Text="{Binding Path=XmlSettings, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             AcceptsReturn="True"/>
+            </TabItem>
+
+            <TabItem Header="GPX">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*" MinHeight="120"/>
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0">
+                        <Button Style="{DynamicResource NormalButtonStyle}" Name="_pbSaveGpx" Command="{Binding CmdSaveGpx}">Save GPX</Button>
+                    </ToolBar>
+                    <TextBox Name="_gpxResult" Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
+                             Text="{Binding Path=GpxResult, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             AcceptsReturn="True"/>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+        <GridSplitter Grid.Row="3" Grid.ColumnSpan="3" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext"/>
+
+        <ScrollViewer Grid.Row="4" Grid.ColumnSpan="3" MaxHeight="56" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <srcv:StatusView x:Name="_status" DataContext="{Binding Path=Status}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

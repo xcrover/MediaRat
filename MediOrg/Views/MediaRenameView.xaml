@@ -1,0 +1,192 @@
+﻿<UserControl x:Class="MediOrg.Views.MediaRenameView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:srcv="clr-namespace:MediOrg.Views"
+             xmlns:src="clr-namespace:MediOrg"
+             xmlns:lfrm="clr-namespace:Ops.NetCoe.LightFrame"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MediOrg.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <Grid Name="_view" Background="{DynamicResource PanelGradientBrush}"  AllowDrop="True" Drop="_folder_Drop" MinWidth="200">
+        <Grid.Resources>
+            <DataTemplate x:Key="FExtTemplate">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="{Binding Title}" Margin="2,-5,0,2" VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="{Binding IsMarked, Mode=TwoWay}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DataTemplate>
+            <src:DtConverter x:Key="DtConverter" />
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400" MinWidth="80"
+                              MaxWidth="{Binding Converter={StaticResource FractionConverter},
+                               ElementName=_view, Path=ActualWidth, ConverterParameter=0.9}" />
+            <ColumnDefinition Width="6" />
+            <ColumnDefinition Width="*" MinWidth="80" MaxWidth="{Binding Converter={StaticResource FractionConverter},
+                               ElementName=_view, Path=ActualWidth, ConverterParameter=0.9}" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"  />
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto" MaxHeight="100" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="2,2,4,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="20"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Label>Source:</Label>
+            <TextBox Name="_source" Grid.Column="1" Text="{Binding Path=CurrentFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="2" Command="{Binding Path=CmdSelectSourceFolder}" MinWidth="24" Content="Browse" />
+        </Grid>
+
+        <DataGrid Name="_files" Grid.Row="2" Grid.RowSpan="2" Grid.Column="0" Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Files}" Height="Auto" 
+                      VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="6,0,6,5" SelectedValue="{Binding CurrentFileDsc, Mode=TwoWay}" SelectionMode="Single"
+                      IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" >
+            <DataGrid.Resources>
+                <lfrm:MappingConverter x:Key="AccentedGroup" UseStringKey="True" DefaultResult="{StaticResource InputFontColor}">
+                    <lfrm:MappingConverter.Items>
+                        <lfrm:MappingConverterItem Source="True" Target="{StaticResource WarningColor}"/>
+                        <lfrm:MappingConverterItem Source="False" Target="{StaticResource InputFontColor}"/>
+                    </lfrm:MappingConverter.Items>
+                </lfrm:MappingConverter>
+
+                <Style x:Key="AccentableCell" TargetType="{x:Type DataGridCell}">
+                    <Setter Property="Foreground" Value="{Binding Path=Group.IsAccented, Converter={StaticResource AccentedGroup}}"/>
+                    <Setter Property="Margin" Value="2,0,2,0"/>
+                </Style>
+                
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="DarkGray"/>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Path=Title}" SortMemberPath="Title" Width="Auto" IsReadOnly="True" CellStyle="{StaticResource AccentableCell}" />
+                <DataGridTextColumn Header="Ext" Binding="{Binding Path=Extension}" SortMemberPath="Extension" Width="Auto" IsReadOnly="True" CellStyle="{StaticResource AccentableCell}"/>
+                <DataGridTextColumn Header="Timestamp" Binding="{Binding Path=FileTime, Converter={StaticResource DtConverter}}" SortMemberPath="FileTime" Width="Auto" IsReadOnly="True" CellStyle="{StaticResource AccentableCell}"/>
+                <DataGridTextColumn Header="New name" Binding="{Binding Path=NewTitle}" SortMemberPath="NewTitle" Width="Auto" IsReadOnly="True" FontStyle="Italic" CellStyle="{StaticResource AccentableCell}">
+                    <!--<DataGridTextColumn.CellStyle>
+                        <Style TargetType="{x:Type DataGridCell}">
+                            <Setter Property="Foreground" Value="{Binding Path=Group.IsAccented, Converter={StaticResource AccentedGroup}}"/>
+                            <Setter Property="Margin" Value="5,4,5,4"/>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>-->
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Name="_groupGrid" Grid.Row="2" Grid.RowSpan="2" Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"  />
+                <RowDefinition Height="8"  />
+                <RowDefinition Height="180" MinHeight="5" MaxHeight="{Binding Converter={StaticResource FractionConverter},
+                               ElementName=_groupGrid, Path=ActualHeight, ConverterParameter=0.7}" />
+            </Grid.RowDefinitions>
+
+
+            <ItemsControl Name="_args" Grid.Row="0" Background="Transparent">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Items>
+                    <!--<Button Command="{Binding Path=CmdApply}" MinWidth="24" Margin="10,0,10,5"
+                            Width="{Binding Converter={StaticResource FractionConverter}, ElementName=_args, Path=ActualWidth, ConverterParameter=0.9}" Content="Apply" Foreground="{DynamicResource GetAttentionColor}"/>-->
+                    <StackPanel Orientation="Horizontal">
+                        <Label Margin="2,-5,0,2" VerticalAlignment="Center">Interval:</Label>
+                        <TextBox Name="_interval" Text="{Binding Path=GrpDivTreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="80" MouseWheel="_interval_MouseWheel" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Margin="2,-5,0,2" VerticalAlignment="Center">Counter start:</Label>
+                        <TextBox Name="_cntSeed" Text="{Binding Path=CntSeed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="80"
+                                 ToolTip="Start counter from this value"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Label Margin="2,-5,0,2" VerticalAlignment="Center">Format:</Label>
+                        <ComboBox Name="_cntFmt" SelectedValue="{Binding CounterFormat, Mode=TwoWay}" MinWidth="80" Style="{DynamicResource SimpleComboBox}"
+                                  ToolTip="Format for counter"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Label Margin="2,-5,0,2" VerticalAlignment="Center">Prefix:</Label>
+                        <ComboBox Name="_grpPrefix" ItemsSource="{Binding GrpPrefixes}" SelectedItem="{Binding CurrentGrpPrefix, Mode=TwoWay}" MinWidth="80"
+                                  DisplayMemberPath="Value" Style="{DynamicResource SimpleComboBox}"
+                                  ToolTip="Format for prefix"/>
+                    </StackPanel>
+
+
+                    <Button Command="{Binding Path=CmdApply}" MinWidth="24" Margin="30,0,10,5"
+                            Width="120" Foreground="{DynamicResource GetAttentionColor}">
+                        <TextBlock Text="APPLY" TextDecorations="Underline" />
+                    </Button>
+
+                </ItemsControl.Items>
+            </ItemsControl>
+
+
+            <ItemsControl Name="_actions" Grid.Row="1" ItemsSource="{Binding Path=Extensions}" Background="Transparent" ItemTemplate="{DynamicResource FExtTemplate}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+
+            <DataGrid Name="_groups" Grid.Row="2" Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=FileGroups}" Height="Auto" 
+                      VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="6,0,6,5" SelectionMode="Single" SelectedValue="{Binding Path=CurrentGroup, Mode=TwoWay}"
+                      IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False" >
+                <DataGrid.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="DarkGray"/>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Title" Binding="{Binding Path=GrpName}" SortMemberPath="GrpName" Width="Auto" IsReadOnly="False" />
+                    <DataGridTextColumn Header="Start" Binding="{Binding Path=StartTime.Value, Converter={StaticResource DtConverter}}" SortMemberPath="StartTime.Value" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="End" Binding="{Binding Path=EndTime.Value, Converter={StaticResource DtConverter}}" SortMemberPath="EndTime.Value" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="N" Binding="{Binding Path=Count}" SortMemberPath="Count" Width="Auto" IsReadOnly="True" ElementStyle="{StaticResource CellRightAlign}" />
+                    <!--<DataGridTemplateColumn Header="Mark">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Slider Name="_rating" Grid.Row="2" IsEnabled="True" IsSnapToTickEnabled="True"
+                                Width="100" Orientation="Horizontal" HorizontalAlignment="Left"  
+                                Value="{Binding Mark, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="0" Maximum="9" TickFrequency="1"
+                                SmallChange="1" LargeChange="1" TickPlacement="TopLeft"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Binding="{Binding Mark}" SortMemberPath="Mark" Width="Auto" IsReadOnly="True"/>-->
+                    <!--Binding="{Binding Mark}" SortMemberPath="Mark" Width="Auto" Header="Mark"/>-->
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <GridSplitter Grid.Row="3" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext"/>
+
+            <!--Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}"-->
+            <Grid Grid.Row="4"  Background="Transparent">
+                <Image Name="_picPreview" Source="{Binding Path=CurrentImage}" 
+                       Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}" 
+                           Stretch="Uniform" MinWidth="60" MinHeight="40" ToolTip="{Binding CurrentFileDsc.Name}"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MouseDown="_picPreview_MouseDown" />
+            </Grid>
+        </Grid>
+
+
+        <GridSplitter Name="_splitter2" Grid.Column="1" Grid.Row="2" Grid.RowSpan="2" Style="{DynamicResource GridSplitterV}" ResizeBehavior="PreviousAndNext" />
+
+        <GridSplitter Grid.Row="4" Grid.ColumnSpan="3" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext"/>
+
+        <ScrollViewer Grid.Row="5" Grid.ColumnSpan="3" MaxHeight="100" MinHeight="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <srcv:StatusView x:Name="_status" DataContext="{Binding Path=Status}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

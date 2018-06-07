@@ -1,0 +1,8 @@
+﻿<Window x:Class="XC.MediaRat.Views.PopupView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PopupView" Width="640" Height="400" FontSize="16">
+    <Grid Name="_view" Height="Auto" Width="Auto">
+        <ContentControl Name="_content" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto" />
+    </Grid>
+</Window>

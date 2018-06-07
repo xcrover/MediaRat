@@ -1,0 +1,113 @@
+﻿<UserControl x:Class="XC.MediaRat.Views.MediaFileSearchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid Name="_view" Background="#060507">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"  />
+            <RowDefinition Height="Auto" MaxHeight="56" />
+        </Grid.RowDefinitions>
+
+        <Grid Name="_toolBar" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Name="_pbFilter" Style="{DynamicResource ToolbarCommandButton}" Grid.Column="0" MinWidth="20" Margin="2,2,2,4" Command="{Binding Path=SearchCmd}" Content="Apply" ToolTip="Apply search filter"/>
+            <Button Name="_pbNext" Style="{DynamicResource ToolbarCommandButton}" Grid.Column="1" MinWidth="20" Margin="2,2,2,4" Command="{Binding Path=NextCmd}" Content="Next" ToolTip="Find next matching item in the current scope"/>
+            <Button Name="_pbRelease" Style="{DynamicResource ToolbarCommandButton}" Grid.Column="2" MinWidth="20" Margin="2,2,2,4" Command="{Binding Path=ReleaseCmd}" Content="ALL" ToolTip="Release the filter and display all the items"/>
+        </Grid>
+
+        <WrapPanel Grid.Row="1" >
+
+            <CheckBox Name="_isRated" IsChecked="{Binding Path=Criteria.IsRated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsThreeState="True" VerticalAlignment="Center" Margin="4,4,16,2">
+                <Label VerticalAlignment="Center" Margin="0,-6,2,2">Rated</Label>
+            </CheckBox>
+
+            <CheckBox Name="_isMarked" IsChecked="{Binding Path=Criteria.IsMarked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsThreeState="True" VerticalAlignment="Center" Margin="4,4,16,2">
+                <Label VerticalAlignment="Center" Margin="0,-6,2,2">Marked</Label>
+            </CheckBox>
+
+            <CheckBox Name="_isHighlighted" IsChecked="{Binding Path=Criteria.IsHighlighted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsThreeState="True" VerticalAlignment="Center" Margin="4,4,16,2">
+                <Label VerticalAlignment="Center" Margin="0,-6,2,2">Highlighted</Label>
+            </CheckBox>
+
+        </WrapPanel>
+
+        <WrapPanel Grid.Row="2">
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Title:</Label>
+                <TextBox Name="_fltTitle" Text="{Binding Path=Criteria.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="120"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Mark:</Label>
+                <TextBox Name="_fltMarker" Text="{Binding Path=Criteria.Marker, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="120"/>
+            </StackPanel>
+        </WrapPanel>
+
+        <WrapPanel Name="_imgExif" Grid.Row="3">
+            <CheckBox Name="_isVert" IsChecked="{Binding Path=Criteria.ImgExifFilter.IsVerticalImg, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsThreeState="True" VerticalAlignment="Center" Margin="4,4,16,2">
+                <Label VerticalAlignment="Center" Margin="0,-6,2,2">Vertical</Label>
+            </CheckBox>
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center" Content="{Binding Criteria.ImgExifFilter.IsoFilter.Label}" ToolTip="{Binding Criteria.ImgExifFilter.IsoFilter.Description}" />
+                <TextBox Text="{Binding Criteria.ImgExifFilter.IsoFilter.MinVal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NValConverter}}" MinWidth="40"  />
+                <TextBlock>..</TextBlock>
+                <TextBox Text="{Binding Criteria.ImgExifFilter.IsoFilter.MaxVal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource NValConverter}}" MinWidth="40"/>
+            </StackPanel>
+        </WrapPanel>
+
+
+        <DataGrid Name="_ratings" Grid.Row="4" Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Criteria.Ratings}" Height="Auto" MaxHeight="120"
+                      IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False" >
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Use" SortMemberPath="IsActive" Width="Auto" IsReadOnly="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Rating" Binding="{Binding Path=Definition.Title}" SortMemberPath="Definition.Title" Width="Auto" IsReadOnly="True" />
+                <DataGridTemplateColumn Header="Min" SortMemberPath="MinRating" Width="Auto" IsReadOnly="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding MinRating, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="Auto" HorizontalAlignment="Stretch"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Max" SortMemberPath="MaxRating" Width="Auto" IsReadOnly="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding MaxRating, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="Auto" HorizontalAlignment="Stretch"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!--<DataGridTextColumn Header="Min" Binding="{Binding Path=MinRating}" SortMemberPath="MinRating" Width="Auto" IsReadOnly="False" />-->
+                <!--<DataGridTextColumn Header="Max" Binding="{Binding Path=MaxRating}" SortMemberPath="MaxRating" Width="Auto" IsReadOnly="False" />-->
+             <!--Binding="{Binding Mark}" SortMemberPath="Mark" Width="Auto" Header="Mark"/>-->
+            </DataGrid.Columns>
+        </DataGrid>
+        <!--<ListBox Name="_categories" Grid.Row="1" ItemsSource="{Binding Path=Categories}" Background="Transparent"/>-->
+        <ItemsControl Name="_categories" Grid.Row="5" ItemsSource="{Binding Path=Categories}" Background="Transparent">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        
+    </Grid>
+</UserControl>

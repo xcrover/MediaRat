@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <kmlStyleMap default="#placemark-red">
+    <!-- Maps marker to the style value. Available styles: blue|brown|green|orange|pink|purple|red|yellow -->
+    <item value="#placemark-blue" marker="eat" />
+    <item value="#placemark-green" marker="sleep" />
+    <!--
+      Rules to figure marker from the title.
+      Rules are applied in order. If order is not specified it is assigned automatically in order of parsing.
+      Keywords (CI) are combined into the Regex "key1|key2|key3". Use '\' to escape special Regex characters.
+      'regex' is applied first. E.g. "^\*.*" matches lines that start from '*'.
+    -->
+    <item value="eat" keywords="restaurant;buffet;cafe;eatery;dining;bar;pizza;pizzeria;grill;bakery;" regex="^\*.*" />
+    <item value="sleep" order="10" keywords="hotel;lodge;motel;appartment;cottage;" />
+  </kmlStyleMap>
+</configuration>

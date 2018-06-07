@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="XC.MediaRat.Views.TrackListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <DockPanel x:Name="_view" Background="{DynamicResource PanelGradientBrush}">
+        <StackPanel Orientation="Vertical" DockPanel.Dock="Right" VerticalAlignment="Center">
+            <Button Name="_pbTop" Style="{DynamicResource ToolbarCommandButton}" Width="20" MinWidth="16" Margin="0,0,2,4" Command="{Binding Path=MoveCmd}" CommandParameter="Top" FontFamily="Segoe UI Symbol" Content="&#xE11C;" ToolTip="Move item to the top"/>
+            <Button Name="_pbUp" Style="{DynamicResource ToolbarCommandButton}" Width="20" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=MoveCmd}" CommandParameter="Up" FontFamily="Segoe UI Symbol" Content="&#xE110;" ToolTip="Move item one step up"/>
+            <Button Name="_pbDown" Style="{DynamicResource ToolbarCommandButton}" Width="20" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=MoveCmd}" CommandParameter="Down" FontFamily="Segoe UI Symbol" Content="&#xE1FD;" ToolTip="Move item item one step down"/>
+            <Button Name="_pbBottom" Style="{DynamicResource ToolbarCommandButton}" Width="20" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=MoveCmd}" CommandParameter="Bottom" FontFamily="Segoe UI Symbol" Content="&#xE118;" ToolTip="Move item to the bottom"/>
+            <Button Name="_pbRemove" Style="{DynamicResource ToolbarCommandButton}" Width="20" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=RemoveCmd}"  FontFamily="Segoe UI Symbol" Content="&#xE106;" ToolTip="Move item one step up"/>
+        </StackPanel>
+        <DataGrid Name="_tracks"  Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Tracks}" 
+                          SelectedItem="{Binding Path=CurrentTrack}" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Id" Binding="{Binding Id}" Foreground="{DynamicResource RemarkFontColor}" ElementStyle="{StaticResource CellRightAlign}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="M" Binding="{Binding MediaType, Converter={StaticResource MediaTypeSymbol}}" 
+                                                    Foreground="{DynamicResource GridHeaderFontColor}"
+                                                    SortMemberPath="MediaType" FontFamily="Segoe UI Symbol" Width="Auto" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title}" SortMemberPath="Title" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Duration [s]" Binding="{Binding DurationS}" ElementStyle="{StaticResource CellRightAlign}" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </DockPanel>
+
+</UserControl>

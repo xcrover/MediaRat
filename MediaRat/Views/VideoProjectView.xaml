@@ -1,0 +1,100 @@
+﻿<UserControl x:Class="XC.MediaRat.Views.VideoProjectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:srcv="clr-namespace:XC.MediaRat.Views"
+             xmlns:lfrm="clr-namespace:Ops.NetCoe.LightFrame"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid x:Name="_view" Background="{DynamicResource PanelGradientBrush}" DataContextChanged="_view_DataContextChanged">
+         <Grid.RowDefinitions>
+            <RowDefinition Height="*"  />
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="200"  />
+            <RowDefinition Height="Auto" MaxHeight="56" />
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" MinWidth="20" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"  />
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <ToolBar Name="_toolBar" Grid.Column="2" Grid.ColumnSpan="3" Grid.Row="0" ItemsSource="{Binding Path=CommandVModels}" HorizontalAlignment="Right" 
+                 ItemTemplate="{DynamicResource CommandTemplate}" Margin="2,5,2,5"/>
+            <GridSplitter Name="_splitter11" Grid.Column="1" Grid.Row="1" Style="{DynamicResource GridSplitterV}" ResizeBehavior="PreviousAndNext" />
+            <TabControl Name="_prjItems" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                        Background="{DynamicResource PanelGradientBrush}" ItemContainerStyle="{DynamicResource StaticTab}">
+                <TabControl.Resources>
+                    <!--<lfrm:MappingConverter x:Key="MediaTypeSymbol" UseStringKey="True" DefaultResult="?!">
+                        <lfrm:MappingConverter.Items>
+                            <lfrm:MappingConverterItem Source="Image" Target="&#57620;"/>
+                            <lfrm:MappingConverterItem Source="Video" Target="&#57622;"/>
+                            <lfrm:MappingConverterItem Source="Audio" Target="&#57666;"/>
+                        </lfrm:MappingConverter.Items>
+                    </lfrm:MappingConverter>-->
+
+                </TabControl.Resources>
+
+                <TabItem Header="Project">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Label Name="_lbPrjTitle">Title:</Label>
+                        <TextBox Name="_prjTitle" Grid.Column="2" Text="{Binding Path=Entity.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
+                        <Label Name="_lbPrjDescripton" Grid.Row="1">Description:</Label>
+                        <TextBox Name="_description" Grid.Column="2" Grid.Row="1" Text="{Binding Entity.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                            VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" MinHeight="50" VerticalAlignment="Stretch" AcceptsReturn="True" AcceptsTab="True" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Sources">
+                    <DataGrid Name="_sources"  Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Entity.Sources}" AllowDrop="True" Drop="_sources_Drop"
+                      SelectedItem="{Binding Path=CurrentSource}" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="M" Binding="{Binding MediaType, Converter={StaticResource MediaTypeSymbol}}" 
+                                                Foreground="{DynamicResource GridHeaderFontColor}"
+                                                SortMemberPath="MediaType" FontFamily="Segoe UI Symbol" Width="Auto" IsReadOnly="True"/>
+                             <DataGridTextColumn Header="Item" Binding="{Binding Title}" SortMemberPath="Title" Width="*" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+                 <TabItem Header="Tracks">
+                    <Grid>
+                        <DataGrid Name="_tracks"  Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Entity.Tracks}" MouseMove="_tracks_MouseMove"
+                          SelectedItem="{Binding Path=CurrentTrack}" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Id" Binding="{Binding Id}" Foreground="{DynamicResource RemarkFontColor}" ElementStyle="{StaticResource CellRightAlign}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="M" Binding="{Binding MediaType, Converter={StaticResource MediaTypeSymbol}}" 
+                                                    Foreground="{DynamicResource GridHeaderFontColor}"
+                                                    SortMemberPath="MediaType" FontFamily="Segoe UI Symbol" Width="Auto" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Title" Binding="{Binding Title}" SortMemberPath="Title" Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Duration [s]" Binding="{Binding DurationS}" ElementStyle="{StaticResource CellRightAlign}" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Structure">
+                    <Grid>
+                        <srcv:TrackTree DataContext="{Binding RootTracksVModel}" />
+                    </Grid>
+                </TabItem>
+            </TabControl>
+            <GridSplitter Name="_splitter12" Grid.Column="3" Grid.Row="1" Style="{DynamicResource GridSplitterV}" ResizeBehavior="PreviousAndNext" />
+        </Grid>
+        <GridSplitter Name="_splitter2" Grid.Row="1" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext" />
+    </Grid>
+</UserControl>

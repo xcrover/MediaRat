@@ -1,0 +1,284 @@
+﻿<UserControl x:Class="XC.MediaRat.Views.ImageProjectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:srcv="clr-namespace:XC.MediaRat.Views"
+             xmlns:lfrm="clr-namespace:Ops.NetCoe.LightFrame"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid x:Name="_view" Background="{DynamicResource PanelGradientBrush}" SizeChanged="_view_SizeChanged">
+        <Grid.InputBindings>
+            <KeyBinding Gesture="Ctrl+Down" Command="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type srcv:ImageProjectView}}, Path=DataContext.GoNextCmd}"  CommandParameter="" />
+            <!--="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}, Path=DataContext.UpCommand}"-->
+            <KeyBinding Command="{Binding GoPreviousCmd}" Gesture="Ctrl+Up" CommandParameter="" />
+        </Grid.InputBindings>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="4*" MinWidth="20" MaxWidth="{Binding ElementName=_sizeMonitor, Path=Width, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.9}"/>
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="*" MinWidth="20" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"  />
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto" MaxHeight="56" />
+        </Grid.RowDefinitions>
+        <Line Name="_sizeMonitor" Visibility="Collapsed" Width="100" Height="100"/>
+        <!--<ListBox Name="_toolBar" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" ItemsSource="{Binding Path=CommandVModels}" HorizontalAlignment="Right" 
+                 Style="{StaticResource HorizontalListBox}" ItemTemplate="{StaticResource CommandTemplate}" Margin="2,5,2,5"/>-->
+        <Menu Name="_mainMenu" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" VerticalAlignment="Center" Style="{DynamicResource MenuTop}" >
+            <MenuItem Header="Pop out" Command="{Binding PopoutCmd}" ToolTip="Display media in separate window"/>
+            <MenuItem Header="Save" Command="{Binding SaveCmd}" ToolTip="Save project"/>
+            <MenuItem Header="Save As" Command="{Binding SaveAsCmd}" ToolTip="Save project with specific file name"/>
+            <MenuItem Header="Copy Ratings" Command="{Binding GetPropElemsCmd}" ToolTip="Copy raitings and categories of the current media file to apply them later"/>
+            <MenuItem Header="Paste Ratings" Command="{Binding ApplyPropElemsCmd}" ToolTip="Apply the previously copied raitings and categories to the selected medifiles"/>
+            <MenuItem Header="Order Weight">
+                <MenuItem.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Background="{DynamicResource PanelGradientBrush}"/>
+                    </ItemsPanelTemplate>
+                </MenuItem.ItemsPanel>
+                <MenuItem Header="Adjust Weights" Command="{Binding AdjustOrderWeightsCmd}" ToolTip="Keep order by weight the same but change weigh value"/>
+                <MenuItem Header="Set Weights by Name" Command="{Binding SetOrderWeightsCmd}" ToolTip="Set Order Weights in the full project by file name"/>
+            </MenuItem>
+            <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
+        </Menu>
+
+        <Grid Name="_mediaPan" Grid.Row="1" Grid.Column="0">
+            <Grid.Resources>
+                <!-- Templates for Image and media player -->
+                <DataTemplate x:Key="ImagePresenter">
+                    <Image Name="_picPreview" Source="{Binding Path=CachedImages.CurrentImage.Content}" Stretch="Uniform" MinWidth="60" ToolTip="{Binding CachedImages.CurrentImage.FileName}"
+                           Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </DataTemplate>
+                
+                <DataTemplate x:Key="VideoPresenter">
+                    <srcv:MediaPlayerView x:Name="_player" DataContext="{Binding ElementName=_view, Path=DataContext}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </DataTemplate>
+                
+                <DataTemplate x:Key="Blank">
+                    
+                </DataTemplate>
+                
+                <lfrm:MappingConverter x:Key="MediaTypePresenter" UseStringKey="True" DefaultResult="{StaticResource Blank}">
+                    <lfrm:MappingConverter.Items>
+                        <lfrm:MappingConverterItem Source="ImageIn" Target="{StaticResource ImagePresenter}"/>
+                        <lfrm:MappingConverterItem Source="VideoIn" Target="{StaticResource VideoPresenter}"/>
+                        <lfrm:MappingConverterItem Source="AudioIn" Target="{StaticResource VideoPresenter}"/>
+                    </lfrm:MappingConverter.Items>
+                </lfrm:MappingConverter>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" MinHeight="30" MaxHeight="{Binding ElementName=_sizeMonitor, Path=Height, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.85}"/>
+                <RowDefinition Height="6" />
+                <RowDefinition Height="*" MinHeight="30"/>
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0"  BorderThickness="2" HorizontalAlignment="Stretch" 
+                    
+                    >
+                <Grid>
+                    <!-- Visibility="{Binding Path=IsInEmbeddedMode, Converter={StaticResource BoolToVisibilityConverter}}" -->
+                    <ContentPresenter Content="{Binding ElementName=_view, Path=DataContext}" ContentTemplate="{Binding Path=SelectedVisualMode, Converter={StaticResource MediaTypePresenter}}"/>
+                </Grid>
+                <!--<Image Name="_picPreview" Source="{Binding Path=CurrentMedia.FullName}" Stretch="Uniform" MinWidth="60" />-->
+                <!--<Image Name="_picPreview" Width="800">
+                    <Image.Source>
+                        <BitmapImage DecodePixelWidth="800" StreamSource="{Binding Path=CurrentMedia.FullName}"  />
+                    </Image.Source>
+                </Image>-->
+            </Border>
+            <GridSplitter Name="_splitter2" Grid.Row="1" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext" />
+            <TabControl Name="_prjItems" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                        Background="{DynamicResource PanelGradientBrush}" ItemContainerStyle="{DynamicResource StaticTab}"
+                >
+                <TabControl.Resources>
+                    <lfrm:MappingConverter x:Key="MediaTypeSymbol" UseStringKey="True" DefaultResult="?!">
+                        <lfrm:MappingConverter.Items>
+                            <lfrm:MappingConverterItem Source="Image" Target="&#57620;"/>
+                            <lfrm:MappingConverterItem Source="Video" Target="&#57622;"/>
+                            <lfrm:MappingConverterItem Source="Audio" Target="&#57666;"/>
+                        </lfrm:MappingConverter.Items>
+                    </lfrm:MappingConverter>
+
+                </TabControl.Resources>
+                <TabItem Header="Media">
+                    <DataGrid Name="_media"  Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=MediaItems}" AllowDrop="True" Drop="_media_Drop"
+                      SelectedItem="{Binding Path=CurrentMedia}" IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False" >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="M" Binding="{Binding MediaType, Converter={StaticResource MediaTypeSymbol}}" 
+                                                Foreground="{DynamicResource GridHeaderFontColor}"
+                                                SortMemberPath="MediaType" FontFamily="Segoe UI Symbol" Width="Auto" IsReadOnly="True"/>
+                            <DataGridTemplateColumn Header="Use" SortMemberPath="IsMarked" ClipboardContentBinding="{Binding IsMarked}" IsReadOnly="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsMarked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                             </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="File" SortMemberPath="Title" ClipboardContentBinding="{Binding Title}" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" MouseMove="_media_BeginDrag"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Ord" Binding="{Binding OrderWeight}" Width="Auto" CellStyle="{StaticResource CellRightAlign}" IsReadOnly="False"/>
+
+                            <!--<DataGridTextColumn Header="File" Binding="{Binding Title}" SortMemberPath="Title" Width="*" IsReadOnly="True"/>-->
+                            <DataGridCheckBoxColumn Header="Rat" Binding="{Binding IsRated}" SortMemberPath="IsRated" Width="Auto" IsReadOnly="True"/>
+                            <DataGridCheckBoxColumn Header="Chk" Binding="{Binding IsLocated}" SortMemberPath="IsLocated" Width="Auto" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Marker" Binding="{Binding Marker}" Width="Auto" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="Auto" IsReadOnly="True" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+                <TabItem Header="Project">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Label Name="_lbPrjTitle">Title:</Label>
+                        <TextBox Name="_prjTitle" Grid.Column="2" Text="{Binding Path=Entity.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
+                        <Label Name="_lbPrjDescripton" Grid.Row="1">Description:</Label>
+                        <TextBox Name="_description" Grid.Column="2" Grid.Row="1" Text="{Binding Entity.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                            VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" MinHeight="50" VerticalAlignment="Stretch" AcceptsReturn="True" AcceptsTab="True" />
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Source">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="80"/>
+                            <ColumnDefinition Width="2" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DataGrid Name="_sourceFilters" Grid.Row="1" Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Entity.SourceFilters}"
+                            SelectedItem="{Binding Path=CurrentSourceFilter}" IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Folder" Binding="{Binding Path=Folder, Mode=TwoWay}" SortMemberPath="Folder" Width="Auto" />
+                                <DataGridTextColumn Header="Filter" Binding="{Binding Path=Filter, Mode=TwoWay}" SortMemberPath="Filter" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1">
+                            <Button Name="_pbAddSrcFilter" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=AddSourceFilterCmd}" Content="New" ToolTip="Add source filter"/>
+                            <Button Name="_pbAddSrcFilterSubtree" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=AddSourceFilterSubTreeCmd}" Content="+Tree" ToolTip="Add subfolders of the selected filter"/>
+                            <Button Name="_pbDelSrcFilter" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=DeleteSourceFilterCmd}" Content="Del" ToolTip="Delete the selected source filter"/>
+                            <Button Name="_pbPopulateMedi" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=PopulateMediaCmd}" Content="Load" ToolTip="Populate medai using specified filters"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Ratings">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="80"/>
+                            <ColumnDefinition Width="2" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DataGrid Name="_ratingDefinitions" Grid.Row="1" Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=Entity.RatingDefinitions}"
+                            SelectedItem="{Binding Path=CurrentRatingDefinition}" IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Marker" Binding="{Binding Path=Marker, Mode=TwoWay}" SortMemberPath="Marker" Width="Auto" MinWidth="30" />
+                                <DataGridTextColumn Header="Title" Binding="{Binding Path=Title, Mode=TwoWay}" SortMemberPath="Title" Width="Auto" MinWidth="80" />
+                                <DataGridTextColumn Header="Description" Binding="{Binding Path=Description, Mode=TwoWay}" SortMemberPath="Description" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1">
+                            <Button Name="_pbAddRatingr" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=AddRatingCmd}" Content="New" ToolTip="Add rating definition"/>
+                            <Button Name="_pbDelRating" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" Margin="0,0,2,4" Command="{Binding Path=DeleteRatingCmd}" Content="Del" ToolTip="Delete the selected rating definition"/>
+                        </StackPanel>
+                    </Grid>
+
+                </TabItem>
+                <TabItem Header="Categories">
+                    <srcv:CtgDefinitionsView x:Name="_ctgDefinitions" DataContext="{Binding CtgDefinitions}" />
+                </TabItem>
+            </TabControl>
+        </Grid>
+        <GridSplitter Name="_splitter1" Grid.Row="1" Grid.Column="1" Style="{DynamicResource GridSplitterV}" ResizeBehavior="PreviousAndNext" />
+
+        <TabControl Name="_propTab" Grid.Column="2" Grid.Row="1" TabStripPlacement="Right" Background="Transparent" ItemContainerStyle="{DynamicResource StaticTabV}">
+            <TabControl.Resources>
+                 <Style x:Key="StaticTabV" TargetType="{x:Type TabItem}">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TabItem}">
+                                <Grid>
+                                    <Grid.LayoutTransform>
+                                        <RotateTransform Angle="90" />
+                                    </Grid.LayoutTransform>
+                                    <Border Name="Border" Background="{DynamicResource TabActiveLableBackground}" BorderBrush="{DynamicResource BorderBrush}" 
+                                BorderThickness="{DynamicResource BorderThickness}" CornerRadius="0,6,0,0" Margin="1,0">
+                                        <Grid Width="Auto" Margin="6,2,4,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Name="_tabTitle" Text="{TemplateBinding Property=Header}" FontFamily="Verdana" FontSize="12" Margin="0" Padding="0" FontWeight="Bold" Foreground="{DynamicResource HeaderFontColor}" Grid.Column="0" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource TabActiveLableBackground}" />
+                                        <Setter TargetName="_tabTitle" Property="Foreground" Value="{DynamicResource HeaderFontColor}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource TabLableBackground}" />
+                                        <Setter TargetName="_tabTitle" Property="Foreground" Value="{DynamicResource HeaderDisabledFontColor}" />
+                                    </Trigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsSelected" Value="False" />
+                                            <Condition Property="IsMouseOver" Value="True" />
+                                        </MultiTrigger.Conditions>
+                                        <!--<Setter TargetName="_tabTitle" Property="Foreground" Value="{DynamicResource GetAttentionColor}" />-->
+                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource TabActiveLableBackground}" />
+                                    </MultiTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+
+            </TabControl.Resources>
+            <TabItem Header="Rating">
+                <srcv:MediaInfoView x:Name="_entityInfo" DataContext="{Binding Path=MediaInfo}" />
+            </TabItem>
+            <TabItem Header="Search">
+                <!--<TextBlock Text="Search pan" />-->
+                <srcv:MediaFileSearchView x:Name="_searchCriteria" DataContext="{Binding Path=SearchVModel}"/>
+            </TabItem>
+            <TabItem Header="Actions">
+                <srcv:ProjectActionsView x:Name="_projectActions" DataContext="{Binding Path=ProjectActions}"/>
+            </TabItem>
+            <TabItem Header="Properties">
+                <srcv:MediaPropertiesView x:Name="_mediaProps" DataContext="{Binding Path=CachedImages}"/>
+            </TabItem>
+        </TabControl>
+
+        <GridSplitter Grid.Row="2" Grid.ColumnSpan="3" Style="{DynamicResource GridSplitterH}" ResizeBehavior="PreviousAndNext"/>
+        
+        <ScrollViewer Grid.Row="3" Grid.ColumnSpan="3" MaxHeight="56" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <srcv:StatusView x:Name="_status" DataContext="{Binding Path=Status}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>
