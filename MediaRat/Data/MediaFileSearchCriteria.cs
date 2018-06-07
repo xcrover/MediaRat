@@ -20,6 +20,35 @@ namespace XC.MediaRat {
         bool IsMatching(MediaFile source);
     }
 
+    public class FilterCollection : IMediaFileFilter {
+        public List<Func<MediaFile, bool>> Filters = new List<Func<MediaFile, bool>>();
+        /// <summary>
+        /// Use AND rule for included filters
+        /// </summary>
+        public bool UseAndRule { get; set; }
+
+        /// <summary>
+        /// Determines whether the specified source is matching.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
+        public bool IsMatching(MediaFile source) {
+            if (this.UseAndRule) {
+                foreach (var flt in this.Filters) {
+                    if (!flt(source)) return false;
+                }
+                return true;
+            }
+            else {
+                foreach (var flt in this.Filters) {
+                    if (flt(source)) return true;
+                }
+                return false;
+            }
+        }
+    }
+
+
     /// <summary>
     /// Search criteria for media file inside project
     /// </summary>
@@ -44,6 +73,48 @@ namespace XC.MediaRat {
         private List<Func<MediaFile, bool>> _filterDelegates= new List<Func<MediaFile,bool>>();
         ///<summary>Image EXIF filter</summary>
         private ImageExifSearchCriteria _imgExifFilter= new ImageExifSearchCriteria();
+        ///<summary>Tech description</summary>
+        private string _techDescription;
+        ///<summary>Include images</summary>
+        private bool? _includeImages;
+        ///<summary>Include Video</summary>
+        private bool? _includeVideo;
+
+        ///<summary>Include Video</summary>
+        public bool? IncludeVideo {
+            get { return this._includeVideo; }
+            set {
+                if (this._includeVideo != value) {
+                    this._includeVideo = value;
+                    this.FirePropertyChanged(nameof(IncludeVideo));
+                }
+            }
+        }
+
+
+        ///<summary>Include images</summary>
+        public bool? IncludeImages {
+            get { return this._includeImages; }
+            set {
+                if (this._includeImages != value) {
+                    this._includeImages = value;
+                    this.FirePropertyChanged(nameof(IncludeImages));
+                }
+            }
+        }
+
+
+        ///<summary>Tech description</summary>
+        public string TechDescription {
+            get { return this._techDescription; }
+            set {
+                if (this._techDescription != value) {
+                    this._techDescription = value;
+                    this.FirePropertyChanged(nameof(TechDescription));
+                }
+            }
+        }
+
 
         ///<summary>Image EXIF filter</summary>
         public ImageExifSearchCriteria ImgExifFilter {
@@ -157,7 +228,10 @@ namespace XC.MediaRat {
                 if (this.IsHighlighted != this.HighlightedItems.Contains(src)) return false;
             }
             if (!string.IsNullOrEmpty(this.Title)) {
-                if (src.Title.IndexOf(this.Title, StringComparison.CurrentCultureIgnoreCase) < 0)
+                if (this.Title.StartsWith("\\")&&(src.FullName.IndexOf(this.Title.Substring(1), StringComparison.CurrentCultureIgnoreCase) < 0)) {
+                    return false;
+                }
+                else if (src.Title.IndexOf(this.Title, StringComparison.CurrentCultureIgnoreCase) < 0)
                     return false;
             }
             if (!string.IsNullOrEmpty(this.Marker)&&(!string.IsNullOrEmpty(src.Marker))) {
@@ -193,7 +267,7 @@ namespace XC.MediaRat {
         /// </summary>
         /// <returns></returns>
         public IMediaFileFilter GetFilter() {
-            FilterCollection rz = new FilterCollection();
+            FilterCollection rz = new FilterCollection() { UseAndRule = true };
             if (this.IsRated.HasValue) {
                 rz.Filters.Add((mf) => mf.IsRated == this.IsRated.Value);
             }
@@ -204,10 +278,42 @@ namespace XC.MediaRat {
                 rz.Filters.Add((mf) => this.IsHighlighted == this.HighlightedItems.Contains(mf));
             }
             if (!string.IsNullOrEmpty(this.Title)) {
-                rz.Filters.Add((mf) => mf.Title.IndexOf(this.Title, StringComparison.CurrentCultureIgnoreCase) >= 0);
+                if (this.Title.StartsWith("\\")) {
+                    string toFind = this.Title.Substring(1);
+                    rz.Filters.Add((mf) => mf.FullName.IndexOf(toFind, StringComparison.CurrentCultureIgnoreCase) >= 0);
+                }
+                else {
+                    rz.Filters.Add((mf) => mf.Title.IndexOf(this.Title, StringComparison.CurrentCultureIgnoreCase) >= 0);
+                }
             }
             if (!string.IsNullOrEmpty(this.Marker)) {
                 rz.Filters.Add((mf) => !string.IsNullOrEmpty(mf.Marker) && mf.Marker.IndexOf(this.Marker, StringComparison.CurrentCultureIgnoreCase) >= 0);
+            }
+            if (!string.IsNullOrEmpty(this.TechDescription)) {
+                var flts = this.TechDescription.Split('&');
+                string toFind;
+                foreach(var fl in flts) {
+                    toFind = fl.Trim();
+                    if (!string.IsNullOrEmpty(toFind)) {
+                        rz.Filters.Add((mf) => !string.IsNullOrEmpty(mf.TechDescription) && mf.TechDescription.IndexOf(toFind, StringComparison.CurrentCultureIgnoreCase) >= 0);
+                    }
+                }
+            }
+            if (this.IncludeImages.HasValue) {
+                if (this.IncludeImages.Value) {
+                    rz.Filters.Add((mf) => mf.MediaType == MediaTypes.Image);
+                }
+                else {
+                    rz.Filters.Add((mf) => mf.MediaType != MediaTypes.Image);
+                }
+            }
+            if (this.IncludeVideo.HasValue) {
+                if (this.IncludeVideo.Value) {
+                    rz.Filters.Add((mf) => mf.MediaType == MediaTypes.Video);
+                }
+                else {
+                    rz.Filters.Add((mf) => mf.MediaType != MediaTypes.Video);
+                }
             }
             foreach (var rf in this.Ratings) {
                 if (rf.IsActive)
@@ -222,21 +328,6 @@ namespace XC.MediaRat {
             return rz;
         }
 
-        class FilterCollection : IMediaFileFilter {
-            public List<Func<MediaFile, bool>> Filters = new List<Func<MediaFile, bool>>();
-
-            /// <summary>
-            /// Determines whether the specified source is matching.
-            /// </summary>
-            /// <param name="source">The source.</param>
-            /// <returns></returns>
-            public bool IsMatching(MediaFile source) {
-                foreach (var flt in this.Filters) {
-                    if (!flt(source)) return false;
-                }
-                return true;
-            }
-        }
     }
 
     /// <summary>
@@ -393,40 +484,45 @@ namespace XC.MediaRat {
 
         #endregion
 
-        class CtgFilter : IMediaFileFilter {
-            public CategoryDefinition Definition;
-            public HashSet<string> Categories;
-            public bool UseNegate;
-            public bool UseAndRule;
-
-            public CtgFilter(CategoryFilter cfg) {
-                this.Definition = cfg.Definition;
-                this.Categories = new HashSet<string>(cfg.EnumerateSelected());
-                this.UseNegate = cfg.UseNegate;
-                this.UseAndRule = cfg.UseAndRule;
-            }
-
-            #region IMediaFileFilter Members
-
-            public bool IsMatching(MediaFile source) {
-                if ((Categories == null) || (Categories.Count == 0)) return true; // Filter is not active
-                var mfCtg = (source.Categories == null) ? null : source.Categories.FirstOrDefault((kv) => kv.Key == this.Definition);
-                bool ctgMatch;
-                if (mfCtg == null) {
-                    ctgMatch = false;
-                }
-                else {
-                    ctgMatch = this.UseAndRule ?
-                        this.Categories.IsSubsetOf(mfCtg.Value) : // All requested categories must be present
-                        mfCtg.Value.Overlaps(this.Categories); // At least one of the requested categories present
-                }
-                return this.UseNegate ? !ctgMatch : ctgMatch;
-            }
-
-            #endregion
-        }
 
     }
+
+    public class CtgFilter : IMediaFileFilter {
+        public CategoryDefinition Definition { get; set; }
+        public HashSet<string> Categories { get; set; }
+        public bool UseNegate { get; set; }
+        public bool UseAndRule { get; set; }
+
+        public CtgFilter() { }
+
+        public CtgFilter(CategoryFilter cfg) {
+            this.Definition = cfg.Definition;
+            this.Categories = new HashSet<string>(cfg.EnumerateSelected());
+            this.UseNegate = cfg.UseNegate;
+            this.UseAndRule = cfg.UseAndRule;
+        }
+
+
+        #region IMediaFileFilter Members
+
+        public bool IsMatching(MediaFile source) {
+            if ((Categories == null) || (Categories.Count == 0)) return true; // Filter is not active
+            var mfCtg = (source.Categories == null) ? null : source.Categories.FirstOrDefault((kv) => kv.Key == this.Definition);
+            bool ctgMatch;
+            if (mfCtg == null) {
+                ctgMatch = false;
+            }
+            else {
+                ctgMatch = this.UseAndRule ?
+                    this.Categories.IsSubsetOf(mfCtg.Value) : // All requested categories must be present
+                    mfCtg.Value.Overlaps(this.Categories); // At least one of the requested categories present
+            }
+            return this.UseNegate ? !ctgMatch : ctgMatch;
+        }
+
+        #endregion
+    }
+
 
     public class ImageExifSearchCriteria : NotifyPropertyChangedBase, IMediaFileFilter {
         ///<summary>Is vertical image</summary>

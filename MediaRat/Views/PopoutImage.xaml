@@ -19,10 +19,11 @@
         <ScrollViewer Grid.Row="0" Grid.Column="0" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" 
                       Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}"
                       HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Image Name="_picPreview"  Source="{Binding Path=CachedImages.CurrentImage.Content}" Stretch="Uniform" MinWidth="60" HorizontalAlignment="Center" VerticalAlignment="Center"
+            <Image Name="_picPreview" Source="{Binding Path=CachedImages.CurrentImage.Content}" Stretch="Uniform" MinWidth="60" HorizontalAlignment="Center" VerticalAlignment="Center"
                        Height="{Binding ElementName=_sizeMonitor, Path=Height, Converter={StaticResource MaxSizeDependencyConverter}, ConverterParameter=0.95}" 
                        Width="Auto" SnapsToDevicePixels="True" 
-                       RenderTransformOrigin="0.5,0.5" 
+                       RenderTransformOrigin="0.5,0.5" MouseDown="_picPreview_MouseDown" 
+                   
                       >
                 <Image.LayoutTransform>
                     <TransformGroup>
@@ -55,7 +56,8 @@
             <Slider Name="_scaleK" IsEnabled="True" IsSnapToTickEnabled="True"
                         Height="250" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="4,10,2,2"
                         Value="{Binding Scale.CurrentP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="0" Maximum="{Binding Scale.MaxP}" TickFrequency="1"
-                        SmallChange="1" LargeChange="2" TickPlacement="BottomRight"/>
+                        SmallChange="1" LargeChange="2" TickPlacement="BottomRight" MouseDoubleClick="_scaleK_MouseDoubleClick"
+                    />
             <TextBlock Name="_scaleVal" Grid.Row="1" Text="{Binding Scale.Value, StringFormat={}{0:0.00}}" Foreground="LightGreen" HorizontalAlignment="Center" Margin="2,6,2,2"/>
         </Grid>
     </Grid>

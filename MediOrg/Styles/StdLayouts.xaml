@@ -11,6 +11,7 @@
     <converter:BoolNegateConverter x:Key="BoolNotConverter" />
     <converter:NullableConverter x:Key="NValConverter" />
     <converter:FractionConverter x:Key="FractionConverter" />
+    <converter:TimeSpanNConverter x:Key="TimeSpanNConverter" />
 
     <!-- This is the style for most borders -->
     <Style x:Key="BorderStyle" TargetType="{x:Type Border}">

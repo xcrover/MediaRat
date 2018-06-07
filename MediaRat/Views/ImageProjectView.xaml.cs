@@ -112,5 +112,24 @@ namespace XC.MediaRat.Views {
             }
         }
 
+        void ExecuteCurrentMediaItem() {
+            var mf = this._media.SelectedItem as MediaFile;
+            if (mf != null) {
+                ImageProjectVModel vm = this._view.DataContext as ImageProjectVModel;
+                if (vm != null) {
+                    vm.OpenMediaCmd.ExecuteIfCan(mf);
+                }
+            }
+        }
+
+        private void _media_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+            ExecuteCurrentMediaItem();
+        }
+
+        private void _picPreview_MouseDown(object sender, MouseButtonEventArgs e) {
+            if ((e.ChangedButton== MouseButton.Left)&&(e.ClickCount==2)) {
+                ExecuteCurrentMediaItem();
+            }
+        }
     }
 }

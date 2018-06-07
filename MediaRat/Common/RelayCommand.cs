@@ -62,6 +62,7 @@ namespace XC.MediaRat {
         AdjustOrderWeights,
         OrderWeightSet,
         SlideShow,
+        ApplyXSettingsCmd,
         //CreateDeploymentTask,
         //CreateTaskGroup,
         //CreateWebSiteTask,

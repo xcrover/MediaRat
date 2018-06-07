@@ -41,18 +41,35 @@
                 <Label VerticalAlignment="Center" Margin="0,-6,2,2">Highlighted</Label>
             </CheckBox>
 
+            <CheckBox Name="_includeImg" IsChecked="{Binding Path=Criteria.IncludeImages, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsThreeState="True" VerticalAlignment="Center" Margin="4,4,16,2">
+                <Label VerticalAlignment="Center" Margin="0,-6,2,2">Images</Label>
+            </CheckBox>
+
+            <CheckBox Name="_includeVideo" IsChecked="{Binding Path=Criteria.IncludeVideo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsThreeState="True" VerticalAlignment="Center" Margin="4,4,16,2">
+                <Label VerticalAlignment="Center" Margin="0,-6,2,2">Video</Label>
+            </CheckBox>
+
         </WrapPanel>
 
         <WrapPanel Grid.Row="2">
             <StackPanel Orientation="Horizontal">
                 <Label VerticalAlignment="Center">Title:</Label>
-                <TextBox Name="_fltTitle" Text="{Binding Path=Criteria.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="120"/>
+                <TextBox Name="_fltTitle" Text="{Binding Path=Criteria.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="120"
+                         ToolTip="Text to find in file name. If starts with '\' then full file name is checked"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal">
                 <Label VerticalAlignment="Center">Mark:</Label>
                 <TextBox Name="_fltMarker" Text="{Binding Path=Criteria.Marker, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="120"/>
             </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <Label VerticalAlignment="Center">Tech:</Label>
+                <TextBox Name="_fltTech" Text="{Binding Path=Criteria.TechDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinWidth="120"
+                         ToolTip="Use '&amp;' to separate several substrings to add"
+                         />
+            </StackPanel>
+
         </WrapPanel>
 
         <WrapPanel Name="_imgExif" Grid.Row="3">

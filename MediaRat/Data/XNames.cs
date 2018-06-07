@@ -144,7 +144,24 @@ namespace XC.MediaRat {
         public static XName xaStopAt = XName.Get("stopAt");
         ///<summary>The XML name for OrderWight [orderw]</summary>
         public static XName xaOrderW = XName.Get("orderw");
+        ///<summary>The XML name for Attributes [attributes]</summary>
+        public static XName xnAttributes = XName.Get("attributes");
 
+        ///<summary>The XML name for Camera [camera]</summary>
+        public static XName xaCamera = XName.Get("camera");
+        ///<summary>The XML name for Lens [lens]</summary>
+        public static XName xaLens = XName.Get("lens");
+        ///<summary>The XML name for Timestamp [timestamp]</summary>
+        public static XName xaTimestamp = XName.Get("timestamp");
+        ///<summary>The XML name for Exposure [exposure]</summary>
+        public static XName xaExposure = XName.Get("exposure");
+        ///<summary>The XML name for FNumber [fNumber]</summary>
+        public static XName xaFNumber = XName.Get("fNumber");
+        ///<summary>The XML name for ISO [iso]</summary>
+        public static XName xaIso = XName.Get("iso");
+
+        ///<summary>The XML name for Negate [negate]</summary>
+        public static XName xaNegate = XName.Get("negate");
 
         /// <summary>
         /// Adds the description element.

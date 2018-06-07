@@ -36,13 +36,27 @@ namespace XC.MediaRat {
         private VideoHelper _videoHelper;
         ///<summary>Var dictionary</summary>
         private Dictionary<string, string> _varMap;
+        ///<summary>UI Cues Selecter</summary>
+        public UiCueSelector UiCueSlc { get; protected set; }
+        /// <summary>
+        /// XML settings editable on UI
+        /// </summary>
+        public XElement XSettings { get; protected set; }
 
+        public const int OrderAutoStep = 10;
+
+        public MediaProject() {
+            this.UiCueSlc = new UiCueSelector(this);
+            this.XSettings = new XElement("settings");
+        }
+
+        #region Properties
         ///<summary>Var dictionary</summary>
         public Dictionary<string, string> VarMap {
             get {
-                if (this._varMap==null) {
+                if (this._varMap == null) {
                     this._varMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-                    foreach(var v in this.Vars) {
+                    foreach (var v in this.Vars) {
                         this._varMap[v.Code ?? string.Empty] = v.Value ?? string.Empty;
                     }
                 }
@@ -51,10 +65,6 @@ namespace XC.MediaRat {
             set { this._varMap = value; }
         }
 
-
-        public const int OrderAutoStep = 10;
-
-        #region Properties
         ///<summary>Project Full file name</summary>
         public string ProjectFileName {
             get { return this._projectFileName; }
@@ -190,6 +200,10 @@ namespace XC.MediaRat {
             foreach (var cv in this.RatingDefinitions) {
                 xcol.Add(cv.GetXml(password));
             }
+            var xcue = this.XSettings.Element(UiCueSelector.XPrime);
+            if (xcue!=null) {
+                xdf.Add(new XElement(xcue));
+            }
             // Add source files
             xrz.Add(xcol = new XElement(XNames.xnMedia));
             foreach (var cv in this.MediaFiles) {
@@ -212,6 +226,7 @@ namespace XC.MediaRat {
             xdf = configSource.GetMandatoryElement(XNames.xnDefinitions, (em) => { throw new BizException(em); });
             // Read variables
             xcol = xdf.GetMandatoryElement(XNames.xnVars);
+            this.XSettings.Add(xcol);
             foreach (var itm in from t in xcol.Elements(XNames.xnVar).Deserialize<CodeValuePair>(ToCodeValuePair) orderby t.Code select t) {
                 this.Vars.Add(itm);
             }
@@ -230,12 +245,28 @@ namespace XC.MediaRat {
             foreach (var itm in from t in xcol.Elements(XNames.xnRating).Deserialize<RatingDefinition>(password) orderby t.Title select t) {
                 this.RatingDefinitions.Add(itm);
             }
+            xcol = xdf.Element(UiCueSelector.XPrime)??UiCueSelector.GetDefaultXmlCfg();
+            this.XSettings.Add(xcol);
+            this.UiCueSlc.ApplyConfiguration(xcol);
             // Reaad media file entries
             xcol = configSource.GetMandatoryElement(XNames.xnMedia);
             foreach (var itm in from t in xcol.Elements(XNames.xnItem).Deserialize<MediaFile>(ToMediaFile) orderby t.Title select t) {
+                itm.RefreshUiCue();
                 this.MediaFiles.Add(itm);
             }
+        }
 
+        public void ApplyXSetings(string txt) {
+            this.XSettings = XElement.Parse(txt);
+            XElement xcol;
+            // Read variables
+            xcol = this.XSettings.GetMandatoryElement(XNames.xnVars);
+            foreach (var itm in from t in xcol.Elements(XNames.xnVar).Deserialize<CodeValuePair>(ToCodeValuePair) orderby t.Code select t) {
+                this.Vars.Add(itm);
+            }
+            xcol = this.XSettings.Element(UiCueSelector.XPrime) ?? UiCueSelector.GetDefaultXmlCfg();
+            this.UiCueSlc.ApplyConfiguration(xcol);
+            this.MediaFiles.Apply(mf => mf.RefreshUiCue());
         }
 
         static CodeValuePair ToCodeValuePair(XElement src) {
@@ -276,6 +307,8 @@ namespace XC.MediaRat {
             this.Title = string.Empty;
             this.Description = string.Empty;
             this.Vars.Clear();
+            this.UiCueSlc.Clear();
+            this.XSettings = new XElement("settings");
             this.SourceFilters.Clear();
             this.RatingDefinitions.Clear();
             this.CategoryDefinitions.Clear();
@@ -307,6 +340,9 @@ namespace XC.MediaRat {
             }
         }
 
+        public UiCues GetCue(MediaFile mf) {
+            return this.UiCueSlc.GetCue(mf);
+        }
 
         #endregion
     }
@@ -361,6 +397,63 @@ namespace XC.MediaRat {
         private string _marker;
         ///<summary>Order weight</summary>
         private int _orderWeight;
+        ///<summary>Media attributes</summary>
+        private CodeValueList _mediaAttributes;
+        ///<summary>Video Format</summary>
+        private string _mediaFormat;
+        ///<summary>Tech description</summary>
+        private string _techDescription;
+        ///<summary>UI CUew</summary>
+        private UiCues _uiCue;
+
+        ///<summary>UI CUew</summary>
+        public UiCues UiCue {
+            get { return this._uiCue; }
+            set {
+                if (this._uiCue != value) {
+                    this._uiCue = value;
+                    this.FirePropertyChanged(nameof(UiCue));
+                }
+            }
+        }
+
+
+        ///<summary>Tech description</summary>
+        public string TechDescription {
+            get { return this._techDescription; }
+            set {
+                if (this._techDescription != value) {
+                    this._techDescription = value;
+                    this.FirePropertyChanged(nameof(TechDescription));
+                }
+            }
+        }
+
+
+        ///<summary>Media Format</summary>
+        public string MediaFormat {
+            get { return this._mediaFormat; }
+            set {
+                if (this._mediaFormat != value) {
+                    this._mediaFormat = value;
+                    this.FirePropertyChanged("MediaFormat");
+                }
+            }
+        }
+
+        ///<summary>Media attributes</summary>
+        public CodeValueList MediaAttributes {
+            get { return this._mediaAttributes; }
+            set { this._mediaAttributes = value; }
+        }
+
+        public CodeValueList MediaAttributesSafe {
+            get { return this._mediaAttributes ?? (this._mediaAttributes = new CodeValueList()); }
+        }
+
+        public bool HasMediaAttributes {
+            get { return (this._mediaAttributes != null) && (this._mediaAttributes.Count > 0); }
+        }
 
         ///<summary>Order weight</summary>
         public int OrderWeight {
@@ -487,6 +580,8 @@ namespace XC.MediaRat {
             get { return GetFullPath(); }
         }
 
+        public virtual void UpdateTechDescription() { }
+
         #region XML Configuration
         /// <summary>
         /// Gets the XML.
@@ -498,6 +593,10 @@ namespace XC.MediaRat {
              XElement xcols, xnd, xrz = new XElement(XNames.xnItem,
                  new XAttribute(XNames.xaType, this.MediaType.ToString()),
                  new XAttribute(XNames.xaLocation, this.FullName));
+
+            if (!string.IsNullOrEmpty(this.MediaFormat))
+                xrz.Add(new XAttribute(XNames.xaMediaFormat, this.MediaFormat));
+
             if (this.OrderWeight!=0) {
                 xrz.Add(new XAttribute(XNames.xaOrderW, this.OrderWeight));
             }
@@ -518,6 +617,14 @@ namespace XC.MediaRat {
                      }
                  }
              }
+             if (this.HasMediaAttributes) {
+                xrz.Add(xcols = new XElement(XNames.xnAttributes));
+                foreach(var cvp in this.MediaAttributes) {
+                    xcols.Add(new XElement(XNames.xnItem,
+                        new XAttribute(XNames.xaId, cvp.Code),
+                        new XAttribute(XNames.xaValue, cvp.Value??string.Empty)));
+                }
+             }
              return xrz;
          }
 
@@ -530,6 +637,7 @@ namespace XC.MediaRat {
         public virtual void ApplyConfiguration(XElement configSource, string password = null) {
             this.FullName = configSource.GetMandatoryAttribute(XNames.xaLocation);
             this.Title = System.IO.Path.GetFileNameWithoutExtension(this.FullName);
+            this.MediaFormat = configSource.GetAttributeValue(XNames.xaMediaFormat, null);
             this.OrderWeight = configSource.GetAttributeInt(XNames.xaOrderW, 0).Value;
             this.Marker = configSource.GetAttributeValue(XNames.xaMarker, null);
             this.Description = configSource.GetDescription();
@@ -550,6 +658,20 @@ namespace XC.MediaRat {
             if (xcats != null) {
                 foreach(var ctd in from c in xcats.Elements(XNames.xnCategory).Deserialize<KeyValuePairX<CategoryDefinition, HashSet<string>>>(ToAssignedCats) select c) {
                     this.Categories.Add(ctd);
+                }
+            }
+            XElement xcols = configSource.Element(XNames.xnAttributes);
+            if (xcols!=null) {
+                var cvplist = this.MediaAttributesSafe;
+                CodeValuePair cvp;
+                foreach(var xvp in xcols.Elements(XNames.xnItem)) {
+                    cvp = new CodeValuePair() {
+                        Code = xvp.GetAttributeValue(XNames.xaId, null),
+                        Value = xvp.GetAttributeValue(XNames.xaValue, string.Empty)
+                    };
+                    if (!string.IsNullOrEmpty(cvp.Code)) {
+                        cvplist.Add(cvp);
+                    }
                 }
             }
             RefreshIsRated();
@@ -601,6 +723,11 @@ namespace XC.MediaRat {
         public bool RefreshIsRated() {
             return this.IsRated = (this.Ratings.Count > 0) || this.HasAssignedCategory();
         }
+
+        public virtual void RefreshUiCue() {
+            this.UiCue = this.Project.GetCue(this);
+        }
+
 
         /// <summary>
         /// Determines whether this media has at least one assigned category.
@@ -715,6 +842,7 @@ namespace XC.MediaRat {
             foreach (var pe in elements) {
                 pe.Applicator(pe, this);
                 this.RefreshIsRated();
+                this.RefreshUiCue();
             }
         }
 
@@ -754,12 +882,18 @@ namespace XC.MediaRat {
     /// Media file with video
     /// </summary>
     public class VideoFile : MediaFile {
-        ///<summary>Video Format</summary>
-        private string _mediaFormat;
         ///<summary>Duration</summary>
         private TimeSpan? _duration;
         ///<summary>Bitrate</summary>
         private int? _bitrate;
+        ///<summary>Dimensions</summary>
+        private ImageDim _dimensions;
+
+        ///<summary>Dimensions</summary>
+        public ImageDim Dimensions {
+            get { return this._dimensions ?? (this._dimensions = new ImageDim()); }
+            set { this._dimensions = value; }
+        }
 
         ///<summary>Bitrate</summary>
         public int? Bitrate {
@@ -785,17 +919,6 @@ namespace XC.MediaRat {
         }
         
 
-        ///<summary>Media Format</summary>
-        public string MediaFormat {
-            get { return this._mediaFormat; }
-            set {
-                if (this._mediaFormat != value) {
-                    this._mediaFormat = value;
-                    this.FirePropertyChanged("MediaFormat");
-                }
-            }
-        }
-        
         ///<summary>Media type</summary>
         override public MediaTypes MediaType {
             get { return MediaTypes.Video; }
@@ -814,8 +937,10 @@ namespace XC.MediaRat {
         }
 
         private void AddVideoAttributes(XElement xe) {
-            if (!string.IsNullOrEmpty(this.MediaFormat))
-                xe.Add(new XAttribute(XNames.xaMediaFormat, this.MediaFormat));
+            if (!this.Dimensions.IsEmpty) {
+                xe.Add(new XAttribute(XNames.xaWidth, this.Dimensions.Width));
+                xe.Add(new XAttribute(XNames.xaHeight, this.Dimensions.Height));
+            }
             if (this.Duration.HasValue)
                 xe.Add(new XAttribute(XNames.xaDuration, this.Duration.Value));
             if (this.Bitrate.HasValue)
@@ -829,9 +954,30 @@ namespace XC.MediaRat {
         /// <param name="password">The password to be used to decrypt sensitive data. Can be <c>null</c>.</param>
         public override void ApplyConfiguration(XElement configSource, string password = null) {
             base.ApplyConfiguration(configSource, password);
-            this.MediaFormat= configSource.GetAttributeValue(XNames.xaMediaFormat, null);
+            uint? tmp = configSource.GetAttributeUInt(XNames.xaWidth);
+            if (tmp.HasValue) {
+                this.Dimensions = new ImageDim() {
+                    Width = (uint)tmp.Value,
+                    Height = (uint)configSource.GetAttributeUInt(XNames.xaHeight, 0)
+                };
+            }
             this.Duration = configSource.GetAttributeTimeSpan(XNames.xaDuration);
             this.Bitrate = configSource.GetAttributeInt(XNames.xaBitrate);
+            UpdateTechDescription();
+        }
+
+        public override void UpdateTechDescription() {
+            StringBuilder sb = new StringBuilder();
+            if (this.Duration.HasValue) {
+                sb.Append("len: ").Append(this.Duration.Value.ToString("c")).Append("; ");
+            }
+            if (this.Bitrate.HasValue) {
+                sb.Append("bRate: ").Append(this.Bitrate.Value).Append("; ");
+            }
+            if (!this.Dimensions.IsEmpty) {
+                sb.Append("size: ").Append(this.Dimensions.ToShortStr()).Append("; ");
+            }
+            this.TechDescription = sb.ToString();
         }
 
         /// <summary>
@@ -856,7 +1002,17 @@ namespace XC.MediaRat {
         /// <returns></returns>
         public override KeyValuePairXCol<string, string> GetMetadata() {
             KeyValuePairXCol<string, string> rz = null;
+
+            //try {
+            //    rz = MediaUtil.GetMetadata(this.GetFullPath());
+            //}
+            //catch (Exception x) {
+            //    System.Diagnostics.Debug.WriteLine(x.ToShortMsg());
+            //}
+
             VideoHelper vhl = this.Project.VideoHelper;
+            int tmpi;
+            uint tmpu;
             try {
                 rz = vhl.GetMetadata(this);
                 if (rz != null) { // Autoupdate properties
@@ -871,11 +1027,21 @@ namespace XC.MediaRat {
                         this.MediaFormat= kvp.Value;
                     }
                     if (null != (kvp = rz.FirstOrDefault((r) => r.Key == VideoHelper.cnBitrate))) {
-                        int tmp;
-                        if (int.TryParse(kvp.Value, out tmp)) {
-                            this.Bitrate = tmp;
+                        if (int.TryParse(kvp.Value, out tmpi)) {
+                            this.Bitrate = tmpi;
                         }
                     }
+                    if (null != (kvp = rz.FirstOrDefault((r) => r.Key == VideoHelper.cnWidth))) {
+                        if (uint.TryParse(kvp.Value, out tmpu)) {
+                            this.Dimensions.Width = tmpu;
+                            if (null != (kvp = rz.FirstOrDefault((r) => r.Key == VideoHelper.cnHeight))) {
+                                if (uint.TryParse(kvp.Value, out tmpu)) {
+                                    this.Dimensions.Height = tmpu;
+                                }
+                            }
+                        }
+                    }
+                    this.UpdateTechDescription();
                 }
             }
             catch (Exception x) {
@@ -896,27 +1062,88 @@ namespace XC.MediaRat {
             get { return MediaTypes.Image; }
         }
 
-        /// <summary>
-        /// Gets the image data.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="Ops.NetCoe.LightFrame.BizException"></exception>
-        public ImageData GetImageDataX() {
-            ImageData rz = new ImageData() { FileName = this.FullName };
-            BitmapSource img = null;
-            try {
-                byte[] buffer = File.ReadAllBytes(this.FullName);
-                MemoryStream memoryStream = new MemoryStream(buffer);
-                img = BitmapFrame.Create(memoryStream);
-                rz.MediaProps = GetMetadata(img.Metadata as BitmapMetadata);
-                img.Freeze();
-                rz.Content = img;
-            }
-            catch (Exception x) {
-                throw new BizException(string.Format("Failed to load image from \"{0}\". {1}: {2}", this.FullName, x.GetType().Name, x.Message));
-            }
-            return rz;
+        ///<summary>Dimensions</summary>
+        private ImageDim _dimensions;
+        ///<summary>Camera</summary>
+        private string _camera;
+        ///<summary>Lens</summary>
+        private string _lens;
+        ///<summary>Timestamp</summary>
+        private DateTime? _timestamp;
+        ///<summary>Exposure</summary>
+        private double? _exposure;
+        ///<summary>FNumber</summary>
+        private double? _fNumber;
+        ///<summary>ISO</summary>
+        private int? _iso;
+
+        ///<summary>ISO</summary>
+        public int? Iso {
+            get { return this._iso; }
+            set { this._iso = value; }
         }
+
+        ///<summary>FNumber</summary>
+        public double? FNumber {
+            get { return this._fNumber; }
+            set { this._fNumber = value; }
+        }
+
+
+        ///<summary>Exposure</summary>
+        public double? Exposure {
+            get { return this._exposure; }
+            set { this._exposure = value; }
+        }
+
+        ///<summary>Timestamp</summary>
+        public DateTime? Timestamp {
+            get { return this._timestamp; }
+            set { this._timestamp = value; }
+        }
+
+        ///<summary>Lens</summary>
+        public string Lens {
+            get { return this._lens; }
+            set { this._lens = value; }
+        }
+
+
+        ///<summary>Camera</summary>
+        public string Camera {
+            get { return this._camera; }
+            set { this._camera = value; }
+        }
+
+
+        ///<summary>Dimensions</summary>
+        public ImageDim Dimensions {
+            get { return this._dimensions??(this._dimensions= new ImageDim()); }
+            set { this._dimensions = value; }
+        }
+
+
+        ///// <summary>
+        ///// Gets the image data.
+        ///// </summary>
+        ///// <returns></returns>
+        ///// <exception cref="Ops.NetCoe.LightFrame.BizException"></exception>
+        //public ImageData GetImageDataX() {
+        //    ImageData rz = new ImageData() { FileName = this.FullName };
+        //    BitmapSource img = null;
+        //    try {
+        //        byte[] buffer = File.ReadAllBytes(this.FullName);
+        //        MemoryStream memoryStream = new MemoryStream(buffer);
+        //        img = BitmapFrame.Create(memoryStream);
+        //        rz.MediaProps = GetMetadata(img.Metadata as BitmapMetadata);
+        //        img.Freeze();
+        //        rz.Content = img;
+        //    }
+        //    catch (Exception x) {
+        //        throw new BizException(string.Format("Failed to load image from \"{0}\". {1}: {2}", this.FullName, x.GetType().Name, x.Message));
+        //    }
+        //    return rz;
+        //}
 
         /// <summary>
         /// Gets the image data.
@@ -932,9 +1159,9 @@ namespace XC.MediaRat {
                 MemoryStream memoryStream = new MemoryStream(buffer);
                 img = BitmapFrame.Create(memoryStream);
                 //memoryStream.Seek(0, SeekOrigin.Begin);
-                rz.MediaProps = MediaUtil.GetMetadata(fpath);
                 img.Freeze();
                 rz.Content = img;
+                rz.MediaProps = MediaUtil.GetMetadata(this);
             }
             catch (Exception x) {
                 throw new BizException(string.Format("Failed to load image from \"{0}\". {1}: {2}", this.FullName, x.GetType().Name, x.Message));
@@ -943,115 +1170,137 @@ namespace XC.MediaRat {
         }
 
 
-        /// <summary>
-        /// Gets the metadata.
-        /// </summary>
-        /// <param name="imgData">The img data.</param>
-        /// <returns></returns>
-        /// <exception cref="Ops.NetCoe.LightFrame.BizException"></exception>
-        public KeyValuePairXCol<string, string> GetMetadata(ImageMetadata imgData) {
-            KeyValuePairXCol<string, string> rz = new KeyValuePairXCol<string, string>();
-            object tmp;
-            try {
-                BitmapMetadata mData = imgData as BitmapMetadata;
-                if (mData != null) {
-                    rz.Add("Camera", string.Format("{1} [{0}]", mData.CameraManufacturer, mData.CameraModel));
-                    if (null != (tmp = mData.GetQuery("System.Photo.LensModel")??GetExifStr(mData, Constants.ExifQuery.SonyLens)))
-                        rz.Add("Lens", tmp.ToString());
+        ///// <summary>
+        ///// Gets the metadata.
+        ///// </summary>
+        ///// <param name="imgData">The img data.</param>
+        ///// <returns></returns>
+        ///// <exception cref="Ops.NetCoe.LightFrame.BizException"></exception>
+        //public KeyValuePairXCol<string, string> GetMetadata(ImageMetadata imgData) {
+        //    KeyValuePairXCol<string, string> rz = new KeyValuePairXCol<string, string>();
+        //    object tmp;
+        //    string stmp;
+        //    try {
+        //        BitmapMetadata mData = imgData as BitmapMetadata;
+        //        var mats = this.MediaAttributesSafe;
+        //        if (mData != null) {
+        //            rz.Add("Camera", stmp=string.Format("{1} [{0}]", mData.CameraManufacturer, mData.CameraModel));
+        //            mats.Ensure(Constants.MediaAttributes.Camera, stmp);
+        //            if (null != (tmp = mData.GetQuery("System.Photo.LensModel") ?? GetExifStr(mData, Constants.ExifQuery.SonyLens))) {
+        //                rz.Add("Lens", stmp=tmp.ToString());
+        //                mats.Ensure(Constants.MediaAttributes.Lens, stmp);
+        //            }
 
-                    ImageDim dm;
-                    if (null!=(dm= GetExifDim(mData))) {
-                        rz.Add("Dimension [px]", dm.ToString());
-                    }
+        //            ImageDim dm;
+        //            if (null!=(dm= GetExifDim(mData))) {
+        //                this.Dimensions = dm;
+        //                rz.Add("Dimension [px]", dm.ToString());
+        //            }
 
-                    rz.Add("Application", mData.ApplicationName);
-                    rz.Add("Date taken", mData.DateTaken);
-                    rz.Add("Format", mData.Format);
-                    rz.Add("Title", mData.Title);
-                    rz.Add("Subject", mData.Subject);
-                    rz.Add("Location", mData.Location);
-                    rz.Add("Rating", mData.Rating.ToString());
-                    if (mData.Keywords != null) {
-                        rz.Add("Keywords", string.Join(", ", mData.Keywords));
-                    }
-                    rz.Add("Comment", mData.Comment);
-                    //foreach (var ms in mData) {
-                    //    rz.Add("", ms);
-                    //}
-                    //object tmp= mData.GetQuery("/app1/ifd/exif/{ushort=37378}") ?? mData.GetQuery("/xmp/exif:ApertureValue");
-                    //object tmp = mData.GetQuery("System.Photo.Aperture");
-                    if (null != (tmp = mData.GetQuery("System.Photo.FNumber")))
-                        rz.Add("FNumber", tmp.ToString());
-                    if (null!= (tmp = mData.GetQuery("System.Photo.Aperture")))
-                        rz.Add("Apperture", tmp.ToString());
-                    //if (null!=(tmp= mData.GetQuery("/app1/ifd/exif/{ushort=33434}") ?? mData.GetQuery("/xmp/exif:ExposureTime")))
-                    if (null != (tmp = mData.GetQuery("System.Photo.ExposureTime")))
-                        rz.Add("Exposure", tmp.ToString());
-                    if (null != (tmp = mData.GetQuery("System.Photo.SubjectDistance")))
-                        rz.Add("Distance", tmp.ToString());
-                    if (null != (tmp = mData.GetQuery("System.Photo.WhiteBalance")))
-                        rz.Add("White balance", tmp.ToString());
-                    if (null != (tmp = mData.GetQuery("System.Photo.Orientation")))
-                        rz.Add("Orientation", tmp.ToString());
-                    if (null != (tmp = mData.GetQuery("System.Photo.ISOSpeed")))
-                        rz.Add("ISO Speed", tmp.ToString());
-                    if (null != (tmp = mData.GetQuery("System.Photo.FocalLength")))
-                        rz.Add("Focal Length", tmp.ToString());
-                    if (null != (tmp = mData.GetQuery("System.Photo.FocalLengthInFilm")))
-                        rz.Add("35mm Focal Length", tmp.ToString());
-                    DumpMeta(mData);
-                }
-            }
-            catch (Exception x) {
-                throw new BizException(string.Format("Failed to extract properties. {0}: {1}", x.GetType().Name, x.Message));
-            }
-            return rz;
-        }
+        //            rz.Add("Application", mData.ApplicationName);
+        //            if (!string.IsNullOrEmpty(mData.DateTaken)) {
+        //                rz.Add("Date taken", mData.DateTaken);
+        //                DateTime dtmp;
+        //                if (DateTime.TryParse(mData.DateTaken, out dtmp)) {
+        //                    mats.Ensure(Constants.MediaAttributes.Timestamp, dtmp.ToString("yyyy-MM-dd HH:mm:ss"));
+        //                }
+        //                else {
+        //                    mats.Ensure(Constants.MediaAttributes.Timestamp, mData.DateTaken);
+        //                }
+        //            }
+        //            rz.Add("Format", mData.Format);
+        //            this.MediaFormat = mData.Format;                   
+        //            rz.Add("Title", mData.Title);
+        //            rz.Add("Subject", mData.Subject);
+        //            rz.Add("Location", mData.Location);
+        //            rz.Add("Rating", mData.Rating.ToString());
+        //            if (mData.Keywords != null) {
+        //                rz.Add("Keywords", string.Join(", ", mData.Keywords));
+        //            }
+        //            rz.Add("Comment", mData.Comment);
+        //            //foreach (var ms in mData) {
+        //            //    rz.Add("", ms);
+        //            //}
+        //            //object tmp= mData.GetQuery("/app1/ifd/exif/{ushort=37378}") ?? mData.GetQuery("/xmp/exif:ApertureValue");
+        //            //object tmp = mData.GetQuery("System.Photo.Aperture");
+        //            if (null != (tmp = mData.GetQuery("System.Photo.FNumber"))) {
+        //                rz.Add("FNumber", tmp.ToString());
+        //                mats.EnsureIf(Constants.MediaAttributes.FNumber, tmp);
+        //            }
+        //            if (null!= (tmp = mData.GetQuery("System.Photo.Aperture")))
+        //                rz.Add("Apperture", tmp.ToString());
+        //            //if (null!=(tmp= mData.GetQuery("/app1/ifd/exif/{ushort=33434}") ?? mData.GetQuery("/xmp/exif:ExposureTime")))
+        //            if (null != (tmp = mData.GetQuery("System.Photo.ExposureTime"))) {
+        //                rz.Add("Exposure", tmp.ToString());
+        //                mats.EnsureIf(Constants.MediaAttributes.Exposure, tmp);
+        //            }
+        //            if (null != (tmp = mData.GetQuery("System.Photo.SubjectDistance")))
+        //                rz.Add("Distance", tmp.ToString());
+        //            if (null != (tmp = mData.GetQuery("System.Photo.WhiteBalance")))
+        //                rz.Add("White balance", tmp.ToString());
+        //            if (null != (tmp = mData.GetQuery("System.Photo.Orientation")))
+        //                rz.Add("Orientation", tmp.ToString());
+        //            if (null != (tmp = mData.GetQuery("System.Photo.ISOSpeed"))) {
+        //                rz.Add("ISO Speed", tmp.ToString());
+        //                mats.EnsureIf(Constants.MediaAttributes.Iso, tmp);
+        //            }
+        //            if (null != (tmp = mData.GetQuery("System.Photo.FocalLength")))
+        //                rz.Add("Focal Length", tmp.ToString());
+        //            if (null != (tmp = mData.GetQuery("System.Photo.FocalLengthInFilm")))
+        //                rz.Add("35mm Focal Length", tmp.ToString());
+        //            DumpMeta(mData);
+        //        }
+        //    }
+        //    catch (Exception x) {
+        //        throw new BizException(string.Format("Failed to extract properties. {0}: {1}", x.GetType().Name, x.Message));
+        //    }
+        //    return rz;
+        //}
 
-        string GetExifStr(BitmapMetadata mData, string query) {
-            try {
-                object tp = mData.GetQuery(query);
-                if (tp == null) return null;
-                BitmapMetadataBlob bmBlob = tp as BitmapMetadataBlob;
-                if (bmBlob==null) {
-                    return tp.ToString();
-                }
-                else
-                    return ASCIIEncoding.Default.GetString(bmBlob.GetBlobValue());
-            }
-            catch {
-                return null;
-            }
-        }
+        //string GetExifStr(BitmapMetadata mData, string query) {
+        //    try {
+        //        object tp = mData.GetQuery(query);
+        //        if (tp == null) return null;
+        //        BitmapMetadataBlob bmBlob = tp as BitmapMetadataBlob;
+        //        if (bmBlob==null) {
+        //            return tp.ToString();
+        //        }
+        //        else
+        //            return ASCIIEncoding.Default.GetString(bmBlob.GetBlobValue());
+        //    }
+        //    catch {
+        //        return null;
+        //    }
+        //}
 
 
-        int? GetExifInt(BitmapMetadata mData, string query) {
-            var s = GetExifStr(mData, query);
-            int rz;
-            if (string.IsNullOrEmpty(s)) return null;
-            if (int.TryParse(s, out rz)) return rz;
-            return null;
-        }
+        //int? GetExifInt(BitmapMetadata mData, string query) {
+        //    var s = GetExifStr(mData, query);
+        //    int rz;
+        //    if (string.IsNullOrEmpty(s)) return null;
+        //    if (int.TryParse(s, out rz)) return rz;
+        //    return null;
+        //}
 
-        uint? GetExifUInt(BitmapMetadata mData, string query) {
-            var s = GetExifStr(mData, query);
-            uint rz;
-            if (string.IsNullOrEmpty(s)) return null;
-            if (uint.TryParse(s, out rz)) return rz;
-            return null;
-        }
+        //uint? GetExifUInt(BitmapMetadata mData, string query) {
+        //    var s = GetExifStr(mData, query);
+        //    uint rz;
+        //    if (string.IsNullOrEmpty(s)) return null;
+        //    if (uint.TryParse(s, out rz)) return rz;
+        //    return null;
+        //}
 
 
-        ImageDim GetExifDim(BitmapMetadata mData) {
-            uint? w = GetExifUInt(mData, Constants.ExifQuery.WidthPix);
-            if (w.HasValue) {
-                uint? h= GetExifUInt(mData, Constants.ExifQuery.HeightPix);
-                if (h.HasValue) {
-                    return new ImageDim() { Width = w.Value, Height = h.Value };
-                }
-            }
-            return null;
-        }
+        //ImageDim GetExifDim(BitmapMetadata mData) {
+        //    uint? w = GetExifUInt(mData, Constants.ExifQuery.WidthPix);
+        //    if (w.HasValue) {
+        //        uint? h= GetExifUInt(mData, Constants.ExifQuery.HeightPix);
+        //        if (h.HasValue) {
+        //            return new ImageDim() { Width = w.Value, Height = h.Value };
+        //        }
+        //    }
+        //    return null;
+        //}
 
         /*
         https://msdn.microsoft.com/en-us/library/system.drawing.imaging.propertyitem.id(v=vs.110).aspx
@@ -1125,12 +1374,13 @@ namespace XC.MediaRat {
         /// <returns></returns>
         public override KeyValuePairXCol<string, string> GetMetadata() {
             KeyValuePairXCol<string, string> rz = null;
-            BitmapSource img = null;
+            //BitmapSource img = null;
             try {
-                byte[] buffer = File.ReadAllBytes(this.FullName);
-                MemoryStream memoryStream = new MemoryStream(buffer);
-                img = BitmapFrame.Create(memoryStream);
-                rz = GetMetadata(img.Metadata as BitmapMetadata);
+                return MediaUtil.GetMetadata(this);
+                //byte[] buffer = File.ReadAllBytes(this.FullName);
+                //MemoryStream memoryStream = new MemoryStream(buffer);
+                //img = BitmapFrame.Create(memoryStream);
+                //rz = GetMetadata(img.Metadata as BitmapMetadata);
             }
             catch (Exception x) {
                 rz = new KeyValuePairXCol<string, string>();
@@ -1139,6 +1389,58 @@ namespace XC.MediaRat {
             return rz;
         }
 
+        public override XElement GetXml(string password = null) {
+            var xrz= base.GetXml(password);
+            if (!this.Dimensions.IsEmpty) {
+                xrz.Add(new XAttribute(XNames.xaWidth, this.Dimensions.Width));
+                xrz.Add(new XAttribute(XNames.xaHeight, this.Dimensions.Height));
+            }
+            xrz.AddAttributeIf(XNames.xaCamera, this.Camera);
+            xrz.AddAttributeIf(XNames.xaLens, this.Lens);
+            xrz.AddAttributeIf(XNames.xaTimestamp, this.Timestamp);
+            xrz.AddAttributeIf(XNames.xaExposure, this.Exposure);
+            xrz.AddAttributeIf(XNames.xaFNumber, this.FNumber);
+            xrz.AddAttributeIf(XNames.xaIso, this.Iso);
+            return xrz;
+        }
+
+        public override void ApplyConfiguration(XElement configSource, string password = null) {
+            base.ApplyConfiguration(configSource, password);
+            uint? tmp = configSource.GetAttributeUInt(XNames.xaWidth);
+            if (tmp.HasValue) {
+                this.Dimensions = new ImageDim() {
+                    Width= (uint)tmp.Value,
+                    Height= (uint)configSource.GetAttributeUInt(XNames.xaHeight, 0)
+                };
+            }
+            this.Camera = configSource.GetAttributeValue(XNames.xaCamera, null);
+            this.Lens = configSource.GetAttributeValue(XNames.xaLens, null);
+            this.Timestamp= configSource.GetAttributeDt(XNames.xaTimestamp);
+            this.Exposure = configSource.GetAttributeDbl(XNames.xaExposure);
+            this.FNumber = configSource.GetAttributeDbl(XNames.xaFNumber);
+            this.Iso = configSource.GetAttributeInt(XNames.xaIso);
+            UpdateTechDescription();
+        }
+
+        public override void UpdateTechDescription() {
+            StringBuilder sb = new StringBuilder();
+            if (this.FNumber.HasValue)
+                sb.Append("f_ ").Append(this.FNumber.Value).Append(' ');
+            if (this.Exposure.HasValue)
+                sb.Append("@").Append(this.Exposure.Value).Append("; ");
+            if (this.Iso.HasValue)
+                sb.Append("ISO: ").Append(this.Iso.Value).Append("; ");
+
+            if (!string.IsNullOrEmpty(this.Camera))
+                sb.Append("cam: ").Append(this.Camera).Append("; ");
+            if (!string.IsNullOrEmpty(this.Lens))
+                sb.Append("lens: ").Append(this.Lens).Append("; ");
+            if (!this.Dimensions.IsEmpty) {
+                sb.Append("size: ").Append(this.Dimensions.ToShortStr()).Append("; ");
+            }
+
+            this.TechDescription= sb.ToString();
+        }
     }
 
     /// <summary>

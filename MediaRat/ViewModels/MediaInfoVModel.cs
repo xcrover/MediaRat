@@ -271,6 +271,7 @@ namespace XC.MediaRat {
 
                 }
                 this.Entity.RefreshIsRated();
+                this.Entity.RefreshUiCue();
             }
         }
 

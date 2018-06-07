@@ -1351,6 +1351,15 @@
         <Setter Property="HorizontalAlignment" Value="Right" />
     </Style>
 
+    <Style x:Key="MenuCtx" TargetType="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource PanelGradientBrush}" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="TextBlock.TextDecorations" Value="Underline" />
+        <Setter Property="Foreground" Value="{StaticResource MenuFontColor}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+
     <Style TargetType="MenuItem">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="FontFamily" Value="Segoe UI" />

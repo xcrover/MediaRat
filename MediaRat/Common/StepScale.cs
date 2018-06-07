@@ -17,6 +17,8 @@ namespace XC.MediaRat {
         private double _value;
         ///<summary>Step values</summary>
         private double[] _steps;
+        ///<summary>Default position index</summary>
+        private int _defaultP;
 
         ///<summary>Step values</summary>
         public double[] Steps {
@@ -63,6 +65,13 @@ namespace XC.MediaRat {
             }
         }
 
+        ///<summary>Default position index</summary>
+        public int DefaultP {
+            get { return this._defaultP; }
+            set { this._defaultP = value; }
+        }
+
+
         /// <summary>
         /// Initializes the specified step count.
         /// </summary>
@@ -80,7 +89,14 @@ namespace XC.MediaRat {
             for (int i = midP + 1; i<this._steps.Length; i++) {
                 this._steps[i] = this._steps[i - 1] * stepK;
             }
-            this.CurrentP = midP;
+            this.CurrentP = this._defaultP= midP;
+        }
+
+        /// <summary>
+        /// Set default position
+        /// </summary>
+        public void SetDefaultPos() {
+            this.CurrentP = this.DefaultP;
         }
     }
 }

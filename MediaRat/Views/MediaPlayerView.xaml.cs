@@ -23,6 +23,8 @@ namespace XC.MediaRat.Views {
         ///<summary>Timer</summary>
         private System.Threading.Timer _vTimer;
         bool _vTimerUpdate;
+        private StepScale _speedScale;
+
 
         ///<summary>Timer</summary>
         public System.Threading.Timer VTimer {
@@ -36,6 +38,16 @@ namespace XC.MediaRat.Views {
         /// </summary>
         public MediaPlayerView() {
             InitializeComponent();
+            _speedScale = this._view.TryFindResource("SpeedScale") as StepScale;
+            _speedScale.Init(15, 1.0, 1.25);
+            _speedScale.PropertyChanged += Sv_PropertyChanged;
+        }
+
+        private void Sv_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
+            if (e.PropertyName == "Value") {
+                StepScale sv = ((StepScale)sender) ?? _speedScale;
+                this._player.SpeedRatio = sv.Value;
+            }
         }
 
         void OnMediaOn() {

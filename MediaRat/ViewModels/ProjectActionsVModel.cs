@@ -256,23 +256,35 @@ namespace XC.MediaRat {
         }
 
         void CopyMediaToFolder(ActionStatusVModel avm, IList<MediaFile> source, string targetFolder) {
-            string tfn=null;
+            string tfn=null, tnm="n/a";
             MediaFile mf;
             StringBuilder err= new StringBuilder();
-            for(int i=0; i<source.Count; i++) {
+            int cx = 0;
+            Func<string, bool> onError = (em) => {
+                avm.SetError(cx + 1, em);
+                this.Parent.Status.SetError(em);
+                err.AppendLine(em);
+                return true;
+            };
+
+            for (int i=0; i<source.Count; i++) {
+                cx = i;
                 mf = source[i];
                 tfn = "n/a";
                 try {
-                    tfn = Path.Combine(this._lastSelectedFolder, Path.GetFileName(mf.FullName));
-                    File.Copy(mf.FullName, tfn);
+                    tnm = mf.GetFullPath();
+                    tfn = Path.Combine(this._lastSelectedFolder, Path.GetFileName(tnm));
+                    CopyAllExtensions(tnm, tfn, onError);
+                    //File.Copy(mf.FullName, tfn);
                     avm.SetSuccess(i+1, mf.Title);
                 }
                 catch (Exception x) {
                     string em= string.Format("Failed to copy file \"{0}\" to \"{1}\". {2}: {3}", mf.FullName, tfn, x.GetType().Name, x.Message);
-                    avm.SetError(i+1, em);
-                    this.Parent.Status.SetError(em);
-                    //this.Log.LogTechError(em, x);
-                    err.AppendLine(em);
+                    onError(em);
+                    //avm.SetError(i+1, em);
+                    //this.Parent.Status.SetError(em);
+                    ////this.Log.LogTechError(em, x);
+                    //err.AppendLine(em);
                 }
                 //System.Threading.Thread.Sleep(500);
             }
@@ -315,29 +327,43 @@ namespace XC.MediaRat {
                     MinIndex = 1,
                     CurrentIndex = 0
                 };
-                string tfn = null;
+                string tfn = null, tnm="n/a";
                 MediaFile mf;
                 StringBuilder err = new StringBuilder();
 
                 this.CurrentActions.Insert(0, avm);
                 var curr = this.Parent.CurrentMedia;
                 this.Parent.CurrentMedia = null;
+
+                int cx = 0;
+                Func<string, bool> onError = (em) => {
+                    avm.SetError(cx + 1, em);
+                    this.Parent.Status.SetError(em);
+                    err.AppendLine(em);
+                    return true;
+                };
+
+
                 for (int i = 0; i < vm.Items.Count; i++) {
+                    cx = i;
                     mf = vm.Items[i].Key;
                     try {
-                        tfn = Path.Combine(Path.GetDirectoryName(mf.FullName), vm.Items[i].Value);
-                        tfn = tfn + Path.GetExtension(mf.FullName);
-                        File.Move(mf.FullName, tfn);
-                        mf.FullName = tfn;
+                        tnm = mf.GetFullPath();
+                        tfn = Path.Combine(Path.GetDirectoryName(tnm), vm.Items[i].Value);
+                        tfn = tfn + Path.GetExtension(tnm);
+                        File.Move(tnm, tfn);
+                        mf.FullName = tfn; // If other files fail project still shoud be OK
                         mf.Title = vm.Items[i].Value;
+                        MoveAllExtensions(tnm, tfn, onError);
                         avm.SetSuccess(i + 1, mf.Title);
                     }
                     catch (Exception x) {
-                        string em = string.Format("Failed to rename file \"{0}\" to \"{1}\". {2}: {3}", mf.FullName, vm.Items[i].Value, x.GetType().Name, x.Message);
-                        avm.SetError(i + 1, em);
-                        this.Parent.Status.SetError(em);
-                        //this.Log.LogTechError(em, x);
-                        err.AppendLine(em);
+                        string em = string.Format("Failed to rename file \"{0}\" to \"{1}\". {2}: {3}", tnm, vm.Items[i].Value, x.GetType().Name, x.Message);
+                        onError(em);
+                        //avm.SetError(i + 1, em);
+                        //this.Parent.Status.SetError(em);
+                        ////this.Log.LogTechError(em, x);
+                        //err.AppendLine(em);
                     }
                 }
                 if (avm.ErrorCount > 0) {
@@ -371,24 +397,34 @@ namespace XC.MediaRat {
         }
 
         void MoveMediaToFolder(ActionStatusVModel avm, IList<MediaFile> source, string targetFolder) {
-            string tfn = null;
+            string tfn = null, tnm;
             MediaFile mf;
             StringBuilder err = new StringBuilder();
+            int cx=0;
+            Func<string, bool> onError = (em) => {
+                avm.SetError(cx + 1, em);
+                this.Parent.Status.SetError(em);
+                err.AppendLine(em);
+                return true;
+            };
             for (int i = 0; i < source.Count; i++) {
                 mf = source[i];
                 tfn = "n/a";
+                cx = i;
                 try {
-                    tfn = Path.Combine(this._lastSelectedFolder, Path.GetFileName(mf.FullName));
-                    File.Move(mf.FullName, tfn);
-                    mf.FullName = tfn;
+                    tnm = mf.GetFullPath();
+                    tfn = Path.Combine(this._lastSelectedFolder, Path.GetFileName(tnm));
+                    File.Move(tnm, tfn);
+                    mf.FullName = tfn; // If other files fail project still shoud be OK
+                    MoveAllExtensions(tnm, tfn, onError);
                     avm.SetSuccess(i + 1, mf.Title);
                 }
                 catch (Exception x) {
                     string em = string.Format("Failed to move file \"{0}\" to \"{1}\". {2}: {3}", mf.FullName, tfn, x.GetType().Name, x.Message);
-                    avm.SetError(i + 1, em);
-                    this.Parent.Status.SetError(em);
-                    //this.Log.LogTechError(em, x);
-                    err.AppendLine(em);
+                    onError(em);
+                    //avm.SetError(i + 1, em);
+                    //this.Parent.Status.SetError(em);
+                    //err.AppendLine(em);
                 }
                 //System.Threading.Thread.Sleep(500);
             }
@@ -399,6 +435,60 @@ namespace XC.MediaRat {
                 this.Parent.Status.SetPositive(string.Format("Completed: {0}", avm.Title));
             }
          }
+
+        static IEnumerable<KeyValuePair<string, string>> GetMatchingFiles(string srcFileName, string trgFileName) {
+            string folder = Path.GetDirectoryName(srcFileName);
+            string pattern = Path.GetFileNameWithoutExtension(srcFileName) + ".*";
+            string trgFolder = Path.GetDirectoryName(trgFileName);
+            string trgFNm = Path.GetFileNameWithoutExtension(trgFileName);
+            string ext, trgPath = Path.Combine(trgFolder, trgFNm);
+            foreach (var sfn in Directory.EnumerateFiles(folder, pattern, SearchOption.TopDirectoryOnly)) {
+                ext = Path.GetExtension(sfn);
+                yield return new KeyValuePair<string, string>(sfn, trgPath+ext);
+            }
+        }
+
+        /// <summary>
+        /// Moves all extensions for the specified <paramref name="srcFileName"/> to the <paramref name="trgFileName"/> with source extensions
+        /// </summary>
+        /// <param name="srcFileName">Source file path. Extension does not matter.</param>
+        /// <param name="trgFileName">Target file path. Extension does not matter.</param>
+        /// <param name="onError">Process error message. Return <c>true</c> to continue or <c>false</c> to stop.</param>
+        static void MoveAllExtensions(string srcFileName, string trgFileName, Func<string, bool> onError) {
+            foreach(var pr in GetMatchingFiles(srcFileName, trgFileName)) {
+                try {
+                    File.Move(pr.Key, pr.Value);
+                }
+                catch(Exception x) {
+                    if (!onError(x.ToShortMsg(string.Format("{0} file \"{1}\" to \"{2}\"",
+                        AreInTheSameFolder(pr.Key, pr.Value) ? "Rename" : "Move",
+                        pr.Key, pr.Value))))
+                        return;
+                }
+            }
+        }
+
+        static bool AreInTheSameFolder(string filePath1, string filePath2) {
+            return Path.GetDirectoryName(filePath1 ?? "").Equals(Path.GetDirectoryName(filePath2 ?? ""), StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Copies all extensions for the specified <paramref name="srcFileName"/> to the <paramref name="trgFileName"/> with source extensions
+        /// </summary>
+        /// <param name="srcFileName">Source file path. Extension does not matter.</param>
+        /// <param name="trgFileName">Target file path. Extension does not matter.</param>
+        /// <param name="onError">Process error message. Return <c>true</c> to continue or <c>false</c> to stop.</param>
+        static void CopyAllExtensions(string srcFileName, string trgFileName, Func<string, bool> onError) {
+            foreach (var pr in GetMatchingFiles(srcFileName, trgFileName)) {
+                try {
+                    File.Copy(pr.Key, pr.Value);
+                }
+                catch (Exception x) {
+                    if (!onError(x.ToShortMsg(string.Format("Copy file \"{0}\" to \"{1}\"", pr.Key, pr.Value))))
+                        return;
+                }
+            }
+        }
 
 
         bool HasSelectedMedia(object prm) {

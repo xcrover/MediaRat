@@ -17,6 +17,20 @@ namespace MediOrg.Models {
         private int _count;
         ///<summary>Is Accented</summary>
         private bool _isAccented;
+        ///<summary>Is manual</summary>
+        private bool _isManual;
+
+        ///<summary>Is manually created</summary>
+        public bool IsManual {
+            get { return this._isManual; }
+            set {
+                if (this._isManual != value) {
+                    this._isManual = value;
+                    this.FirePropertyChanged(nameof(IsManual));
+                }
+            }
+        }
+
 
         ///<summary>Is Accented</summary>
         public bool IsAccented {

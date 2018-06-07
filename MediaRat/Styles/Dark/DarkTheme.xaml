@@ -94,7 +94,7 @@
 
     <!-- This is the default style for all textblocks -->
     <Style TargetType="{x:Type TextBlock}">
-        <Setter Property="FontFamily" Value="Calibri"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
     </Style>
 
     <Style x:Key="NormalButtonStyle" TargetType="{x:Type Button}">
@@ -1396,7 +1396,7 @@
         <Setter Property="MinHeight" Value="28" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource GridHeaderFontColor}"/>
-        <Setter Property="FontFamily" Value="Calibri" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize" Value="16" />
         <!--<Setter Property="FontWeight" Value="Bold" />-->
         <!--<Setter Property="HorizontalContentAlignment" Value="Center"/>-->
@@ -1468,6 +1468,30 @@
         </Setter>
     </Style>
 
+    <Style x:Key="DefaultGridCellStyle" TargetType="DataGridCell">
+        <Style.Triggers>
+            <Trigger Property="IsSelected"
+                        Value="True">
+                <Setter Property="Background"
+                        Value="DarkOliveGreen" />
+                <Setter Property="Foreground"
+                        Value="Black" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DefaultGridRowStyle" TargetType="DataGridRow">
+        <Style.Triggers>
+            <Trigger Property="IsSelected"
+                        Value="True">
+                <Setter Property="BorderBrush"
+                        Value="Blue" />
+                <Setter Property="BorderThickness"
+                        Value="1" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
 
     <!--<Style TargetType="DataGridColumnHeader" x:Key="GridColumnHeader">
         <Setter Property="Background" Value="Transparent" />
@@ -1496,6 +1520,8 @@
         <!--<Setter Property="FontFamily" Value="Calibri" />-->
         <!--<Setter Property="FontSize" Value="16" />-->
         <Setter Property="ColumnHeaderStyle" Value="{DynamicResource GridColumnHeader}"/>
+        <Setter Property="RowStyle" Value="{DynamicResource DefaultGridRowStyle}"/>
+        <Setter Property="CellStyle" Value="{DynamicResource DefaultGridCellStyle}"/>
     </Style>
 
     <Style x:Key="EditGrid" TargetType="DataGrid" BasedOn="{StaticResource SearchResultGrid}">

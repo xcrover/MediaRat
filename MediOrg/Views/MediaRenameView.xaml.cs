@@ -67,5 +67,75 @@ namespace MediOrg.Views {
                     vm.RunDefaultActionOnCurrentMedia();
             }
         }
+
+        /// <summary>
+        /// When user double clicks on group navigate to the first file in this group
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void _groups_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+            if (this._groups.SelectedItem == null) return;
+            var vm = this.ViewModel;
+            if (vm != null) {
+                var grp = this._groups.SelectedItem as FileGroupDsc;
+                // Try to find first image or another file if there is no image and make it curent
+                var fileToShow = vm.FindFirstImageForTheGroup(grp) ?? vm.FindFirstFileForTheGroup(grp);
+                if (fileToShow != null) {
+                    this._files.ScrollIntoView(fileToShow);
+                    this._files.SelectedItem = fileToShow;
+                }
+            }
+        }
+
+        double _grpRatio = 0.3;
+
+        private void _view_SizeChanged(object sender, SizeChangedEventArgs e) {
+            var nsz = e.NewSize;
+            if (e.WidthChanged) {
+                if (nsz.Width>10) {
+                    var trgW = _grpRatio * nsz.Width;
+                    if (trgW > this._grpAreaCol.MaxWidth)
+                        trgW = this._grpAreaCol.MaxWidth;
+                    if (trgW < this._grpAreaCol.MinWidth)
+                        trgW = this._grpAreaCol.MinWidth;
+                    this._grpAreaCol.Width= new GridLength(trgW);
+                }
+            }
+        }
+
+
+        private void _view_LayoutUpdated(object sender, EventArgs e) {
+            if (this._view.ActualWidth > 10) {
+                _grpRatio = this._grpAreaCol.ActualWidth / this._view.ActualWidth;
+                //System.Diagnostics.Debug.WriteLine(string.Format("grpRat: {0}", _grpRatio));
+            }
+        }
+
+        double _picRatio = 0.415;
+
+        private void _groupGrid_LayoutUpdated(object sender, EventArgs e) {
+            if (this._groupGrid.ActualHeight > 10) {
+                _picRatio = this._picAreaRow.ActualHeight / this._groupGrid.ActualHeight;
+                //System.Diagnostics.Debug.WriteLine(string.Format("_picRatio: {0}", _picRatio));
+            }
+        }
+
+        private void _groupGrid_SizeChanged(object sender, SizeChangedEventArgs e) {
+            var nsz = e.NewSize;
+            if (e.HeightChanged) {
+                if (nsz.Height > 10) {
+                    var trgW = _picRatio * nsz.Height;
+                    if (trgW > this._picAreaRow.MaxHeight)
+                        trgW = this._picAreaRow.MaxHeight;
+                    if (trgW < this._picAreaRow.MinHeight)
+                        trgW = this._picAreaRow.MinHeight;
+                    this._picAreaRow.Height = new GridLength(trgW);
+                }
+            }
+        }
+
+        private void _files_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+            this.ViewModel?.RunDefaultActionOnCurrentMedia();
+        }
     }
 }

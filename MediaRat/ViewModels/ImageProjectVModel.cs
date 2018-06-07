@@ -50,6 +50,20 @@ namespace XC.MediaRat {
         private Func<IList<MediaFile>> _getHighlightedItems;
         ///<summary>List of Prop Elements</summary>
         private IList<PropElement> _propBag;
+        ///<summary>XSettings</summary>
+        private string _xSettingsTxt;
+
+        ///<summary>XSettings</summary>
+        public string XSettingsTxt {
+            get { return this._xSettingsTxt; }
+            set {
+                if (this._xSettingsTxt != value) {
+                    this._xSettingsTxt = value;
+                    this.FirePropertyChanged(nameof(XSettingsTxt));
+                }
+            }
+        }
+
 
         ///<summary>List of Prop Elements</summary>
         public IList<PropElement> PropBag {
@@ -207,6 +221,7 @@ namespace XC.MediaRat {
             get { return this._currentMedia; }
             set {
                 if (this._currentMedia != value) {
+                    var oldMf = this._currentMedia;
                     this._currentMedia = value;
                     this.MediaInfo.Entity = value;
                     this.FirePropertyChanged("CurrentMedia");
@@ -214,6 +229,9 @@ namespace XC.MediaRat {
                     //this.Status.Clear();
                     this.CachedImages.SetMediaFile(value);
                     this.ResetViewState();
+                    if (oldMf != null) {
+                        oldMf.RefreshUiCue();
+                    }
                 }
             }
         }
@@ -243,6 +261,7 @@ namespace XC.MediaRat {
                     this.FirePropertyChanged("Entity");
                     this.ResetViewState();
                     this.UpdateMediaItems();
+                    this.XSettingsTxt = (value == null) ? string.Empty : value.XSettings.ToString();
                 }
             }
         }
@@ -300,6 +319,20 @@ namespace XC.MediaRat {
 	    private RelayCommand _adjustOrderWeightsCmd;
         ///<summary>Set Order Weights Command</summary>
 	    private RelayCommand _setOrderWeightsCmd;
+        ///<summary>Open media in default OS Command</summary>
+	    private RelayCommand _openMediaCmd;
+        ///<summary>Apply XSettings Command</summary>
+        private RelayCommand _applyXSettingsCmd;
+
+        ///<summary>Apply XSettings Command</summary>
+        public RelayCommand ApplyXSettingsCmd {
+            get { return this._applyXSettingsCmd; }
+        }
+
+        ///<summary>Open media in default OS Command</summary>
+        public RelayCommand OpenMediaCmd {
+            get { return this._openMediaCmd; }
+        }
 
         ///<summary>Set Order Weights Command</summary>
         public RelayCommand SetOrderWeightsCmd {
@@ -457,6 +490,7 @@ namespace XC.MediaRat {
         }
 
         void SaveProject(MediaProject src, string targetPath, string password = null) {
+            this.Status.Clear();
             try {
                 XElement xel = src.GetXml(password);
                 XDocument xd = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), xel);
@@ -975,6 +1009,37 @@ namespace XC.MediaRat {
             return true;
         }
 
+        ///<summary>Execute Open media in default OS Command</summary>
+        void DoOpenMediaCmd(object prm = null) {
+            MediaFile mf = (prm as MediaFile) ?? this.CurrentMedia;
+            if (mf!=null)
+                System.Diagnostics.Process.Start(this.CurrentMedia.GetFullPath());
+        }
+
+        ///<summary>Check if Open media in default OS Command can be executed</summary>
+        bool CanOpenMediaCmd(object prm = null) {
+            MediaFile mf = (prm as MediaFile) ?? this.CurrentMedia;
+            return mf!=null;
+        }
+
+
+        ///<summary>Execute Apply XSettings Command</summary>
+        void DoAapplyXSettingsCmd(object prm = null) {
+            this.Status.Clear();
+            try {
+                this.Entity.ApplyXSetings(this.XSettingsTxt);
+            }
+            catch (Exception x) {
+                this.ReportError(x);
+            }
+        }
+
+        ///<summary>Check if Apply XSettings Command can be executed</summary>
+        bool CanApplyXSettingsCmd(object prm = null) {
+            return true;
+        }
+
+
         /// <summary>
         /// Enumerate all the available commands
         /// </summary>
@@ -997,6 +1062,8 @@ namespace XC.MediaRat {
             yield return this.GoPreviousCmd;
             yield return this.SetOrderWeightsCmd;
             yield return this.AdjustOrderWeightsCmd;
+            yield return this.OpenMediaCmd;
+            yield return this.ApplyXSettingsCmd;
             yield return this.ExitCommand;
         }
 
@@ -1022,6 +1089,8 @@ namespace XC.MediaRat {
             this._goPreviousCmd = new RelayCommand(UIOperations.MovePrevious, DoGoPreviousCmd, CanGoPreviousCmd);
             this._setOrderWeightsCmd = new RelayCommand(UIOperations.OrderWeightSet, DoSetOrderWeightsCmd, CanSetOrderWeightsCmd);
             this._adjustOrderWeightsCmd = new RelayCommand(UIOperations.AdjustOrderWeights, DoAdjustOrderWeightsCmd, CanAdjustOrderWeightsCmd);
+            this._openMediaCmd = new RelayCommand(UIOperations.Open, DoOpenMediaCmd, CanOpenMediaCmd);
+            this._applyXSettingsCmd = new RelayCommand(UIOperations.ApplyXSettingsCmd, DoAapplyXSettingsCmd, CanApplyXSettingsCmd);
             this._exitCmd = new RelayCommand(UIOperations.Exit, DoExit, (p) => true);
 
             this.SearchVModel.SearchCmd = this.SearchCmd;
@@ -1036,9 +1105,11 @@ namespace XC.MediaRat {
             cmdVms.Add(new CommandVModel(PopulateMediaCmd) { Name = "Populate", Description = "Populate media files to the project according to source criteria project" });
             cmdVms.Add(new CommandVModel(GetPropElemsCmd) { Name = "Copy Ratings", Description = "Copy raitings and categories of the current media file to apply them later" });
             cmdVms.Add(new CommandVModel(ApplyPropElemsCmd) { Name = "Paste Ratings", Description = "Apply the previously copied raitings and categories to the selected medifiles" });
+            cmdVms.Add(new CommandVModel(OpenMediaCmd) { Name = "Launch", Description = "Open media in default OS Command" });
             cmdVms.Add(new CommandVModel(SetOrderWeightsCmd) { Name = "Set Weights", Description = "Set Order Weights by name" });
             cmdVms.Add(new CommandVModel(AdjustOrderWeightsCmd) { Name = "Adjust Weights", Description = "Keep order by weight but change weigh value" });
             cmdVms.Add(new CommandVModel(ExitCommand));
+            // cmdVms.Add(new CommandVModel(applyXSettingsCmd) { Name = "applyXSettingsCmd", Description = "Apply XSettings Command" });
             //cmdVms.Add(new CommandVModel(ClonetCmd) { Name = "Clone", Description = "Clone workspace" });
             CommandVModels = cmdVms;
         }

@@ -17,7 +17,7 @@
     </ScrollViewer>-->
     <TextBox Name="_statusMessage" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="True" 
              Style="{DynamicResource StatusMessageError}" BorderThickness="0" Margin="5,2"
-             Text="{Binding Path=UserMessage}" DataContextChanged="_statusMessage_DataContextChanged">
+             Text="{Binding Path=UserMessage}" DataContextChanged="_statusMessage_DataContextChanged" MouseDoubleClick="_statusMessage_MouseDoubleClick">
         <TextBox.ContextMenu>
             <ContextMenu>
                 <MenuItem Command="ApplicationCommands.SelectAll" />

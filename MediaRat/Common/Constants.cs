@@ -16,7 +16,15 @@ namespace XC.MediaRat {
             public static ushort SonyLens = 42036;
             public static ushort WidthPix = 40962; // 0xA002
             public static ushort HeightPix = 40963; // 0xA003
+        }
 
+        public static class MediaAttributes {
+            public const string Camera = "Camera";
+            public const string Lens = "Lens";
+            public const string Timestamp = "timestamp";
+            public const string Iso = "ISO";
+            public const string Exposure = "Exposure";
+            public const string FNumber = "FNumber";
         }
     }
 }

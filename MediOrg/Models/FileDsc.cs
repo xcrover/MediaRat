@@ -17,7 +17,20 @@ namespace MediOrg.Models {
         private string _title;
         ///<summary>New title</summary>
         private string _newTitle;
-        public FileGroupDsc Group { get; set; }
+        ///<summary>Group</summary>
+        private FileGroupDsc _group;
+
+        ///<summary>Group</summary>
+        public FileGroupDsc Group {
+            get { return this._group; }
+            set {
+                if (this._group != value) {
+                    this._group = value;
+                    this.FirePropertyChanged(nameof(Group));
+                }
+            }
+        }
+
 
         ///<summary>New title</summary>
         public string NewTitle {

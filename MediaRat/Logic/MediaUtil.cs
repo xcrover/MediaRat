@@ -68,6 +68,12 @@ namespace XC.MediaRat {
             return rz;
         }
 
+        /// <summary>
+        /// Get Metadata via ExifReader.
+        // XC 20170610: this is real metadata shown on UI
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public static KeyValuePairXCol<string, string> GetMetadata(string filePath) {
             KeyValuePairXCol<string, string> rz;
             ExifReader xrf = null;
@@ -76,13 +82,28 @@ namespace XC.MediaRat {
                 rz = GetMetadata(xrf);
             }
             finally {
+                if (xrf!=null)
+                    xrf.Dispose();
+            }
+            return rz;
+        }
+
+        public static KeyValuePairXCol<string, string> GetMetadata(ImageFile mf) {
+            KeyValuePairXCol<string, string> rz;
+            ExifReader xrf = null;
+            try {
+                xrf = new ExifReader(mf.GetFullPath());
+                rz = GetMetadata(xrf, mf);
+                mf.UpdateTechDescription();
+            }
+            finally {
                 xrf.Dispose();
             }
             return rz;
         }
 
 
-        public static KeyValuePairXCol<string, string> GetMetadata(ExifReader xfr) {
+        public static KeyValuePairXCol<string, string> GetMetadata(ExifReader xfr, ImageFile mf=null) {
             KeyValuePairXCol<string, string> rz = new KeyValuePairXCol<string, string>();
             object tmp;
             string ts;
@@ -92,6 +113,7 @@ namespace XC.MediaRat {
             UInt16 un16;
             double td;
             object otm;
+            //CodeValueList mats = (mf==null) ? null : mf.MediaAttributesSafe;
             try {
                 sb = new StringBuilder();
                 if (xfr.GetTagValue(ExifTags.Make, out ts)) {
@@ -101,11 +123,14 @@ namespace XC.MediaRat {
                     if (sb.Length > 0) sb.Append(' ');
                     sb.Append(ts);
                 }
-                if (sb.Length > 0)
-                    rz.Add("Camera", sb.ToString());
+                if (sb.Length > 0) {
+                    rz.Add("Camera", ts=sb.ToString());
+                    if (mf != null) mf.Camera = ts;
+                }
 
                 if (xfr.GetTagValue(ExifTags.LensModel, out ts)) {
                     rz.Add("Lens", ts);
+                    if (mf != null) mf.Lens = ts;
                 }
 
                 if (xfr.GetTagValue(ExifTags.XPSubject, out ts)) {
@@ -143,8 +168,10 @@ namespace XC.MediaRat {
                 //}
 
                 ImageDim dm = GetImgDim(xfr);
-                if (dm!= null)
+                if (dm != null) {
+                    if (mf != null) mf.Dimensions = dm;
                     rz.Add("Dimension [px]", dm.ToString());
+                }
                 //if (xfr.GetTagValue(ExifTags.ImageWidth, out tw)&& xfr.GetTagValue(ExifTags.ImageLength, out th)) {
                 //    ImageDim dm = new ImageDim() { Width = tw, Height = th };
                 //    rz.Add("Dimension [px]", dm.ToString()); 
@@ -160,10 +187,12 @@ namespace XC.MediaRat {
 
                 if (xfr.GetTagValue(ExifTags.DateTimeDigitized, out dt)) {
                     rz.Add("Date taken", dt.ToString("yyyy-MM-dd HH:mm:ss"));
+                    if (mf!=null) mf.Timestamp= dt;
                 }
 
                 if (xfr.GetTagValue(ExifTags.FNumber, out td)) {
                     rz.Add("FNumber", td.ToString());
+                    if (mf != null) mf.FNumber= td;
                 }
 
                 if (xfr.GetTagValue(ExifTags.ApertureValue, out otm)) {
@@ -171,14 +200,17 @@ namespace XC.MediaRat {
                 }
 
                 if (xfr.GetTagValue(ExifTags.ExposureTime, out otm)) {
-                    rz.Add("Exposure", otm.ToString());
+                    rz.Add("Exposure", ts= otm.ToString());
+                    if (mf != null) mf.Exposure= ToDblN(ts);
                 }
 
                 if (xfr.GetTagValue(ExifTags.ISOSpeed, out otm)) {
                     rz.Add("ISO Speed", otm.ToString());
+                    if (mf != null) mf.Iso= ToIntN(otm);
                 }
                 else if (xfr.GetTagValue(ExifTags.PhotographicSensitivity, out otm)) {
-                    rz.Add("ISO Speed", otm.ToString());
+                    rz.Add("ISO Speed", ts=otm.ToString());
+                    if (mf != null) mf.Iso = ToIntN(otm);
                 }
 
 
@@ -194,10 +226,8 @@ namespace XC.MediaRat {
                     rz.Add("White Point", otm.ToString());
                 }
 
-
                 //BitmapMetadata mData = imgData as BitmapMetadata;
                 //if (mData != null) {
-
 
                 //    rz.Add("Application", mData.ApplicationName);
                 //    rz.Add("Date taken", mData.DateTaken);
@@ -263,8 +293,26 @@ namespace XC.MediaRat {
             return null;
         }
 
+        public static double? ToDblN(object src) {
+            if (src == null) return null;
+            double t;
+            if (double.TryParse(src.ToString(), out t)) {
+                return t;
+            }
+            return null;
+        }
+
         static UInt32 ToUInt32(object src) {
             return Convert.ToUInt32(src);
+        }
+
+        static int? ToIntN(object src) {
+            if (src == null) return null;
+            int t;
+            if (int.TryParse(src.ToString(), out t)) {
+                return t;
+            }
+            return null;
         }
     }
 }

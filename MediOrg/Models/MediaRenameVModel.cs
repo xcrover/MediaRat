@@ -39,31 +39,35 @@ namespace MediOrg.Models {
         ///<summary>Is image selected</summary>
         private bool _isImageSelected;
         private HashSet<string> _imgExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        ///<summary>Group prefixes</summary>
-        private ObservableCollection<CodeValuePair> _grpPrefixes= new ObservableCollection<CodeValuePair>();
-        ///<summary>Current group prefix</summary>
-        private CodeValuePair _currentGrpPrefix;
+        ///<summary>Name templates</summary>
+        private ObservableCollection<CodeValuePair> _nameTemplates= new ObservableCollection<CodeValuePair>();
+        ///<summary>Current name template</summary>
+        private CodeValuePair _currentTemplate;
+        ///<summary>Source marker</summary>
+        private string _sourceMarker;
+        ///<summary>Time shift</summary>
+        private TimeSpan? _timeShift;
 
-        ///<summary>Current group prefix</summary>
-        public CodeValuePair CurrentGrpPrefix {
-            get { return this._currentGrpPrefix; }
+        #region Properties
+        ///<summary>Current name template</summary>
+        public CodeValuePair CurrentTemplate {
+            get { return this._currentTemplate; }
             set {
-                if (this._currentGrpPrefix != value) {
-                    this._currentGrpPrefix = value;
-                    this.FirePropertyChanged(nameof(CurrentGrpPrefix));
+                if (this._currentTemplate != value) {
+                    this._currentTemplate = value;
+                    this.FirePropertyChanged(nameof(CurrentTemplate));
                     PrepareNames();
                 }
             }
         }
 
-
-        ///<summary>Group prefixes</summary>
-        public ObservableCollection<CodeValuePair> GrpPrefixes {
-            get { return this._grpPrefixes; }
+        ///<summary>Name templates</summary>
+        public ObservableCollection<CodeValuePair> NameTemplates {
+            get { return this._nameTemplates; }
             set {
-                if (this._grpPrefixes != value) {
-                    this._grpPrefixes = value;
-                    this.FirePropertyChanged(nameof(GrpPrefixes));
+                if (this._nameTemplates != value) {
+                    this._nameTemplates = value;
+                    this.FirePropertyChanged(nameof(NameTemplates));
                 }
             }
         }
@@ -148,6 +152,29 @@ namespace MediOrg.Models {
             }
         }
 
+        ///<summary>Source marker</summary>
+        public string SourceMarker {
+            get { return this._sourceMarker; }
+            set {
+                if (this._sourceMarker != value) {
+                    this._sourceMarker = value;
+                    this.FirePropertyChanged(nameof(SourceMarker));
+                    PrepareNames();
+                }
+            }
+        }
+
+        ///<summary>Time shift</summary>
+        public TimeSpan? TimeShift {
+            get { return this._timeShift; }
+            set {
+                if (this._timeShift != value) {
+                    this._timeShift = value;
+                    this.FirePropertyChanged(nameof(TimeShift));
+                    PrepareNames();
+                }
+            }
+        }
 
         ///<summary>Files</summary>
         public ObservableCollection<FileDsc> Files {
@@ -221,13 +248,17 @@ namespace MediOrg.Models {
             }
         }
 
+        #endregion
+
+        #region Construction
+
         public MediaRenameVModel() {
             this.Status = new StatusVModel();
             InitCommands();
             DelayedRefresh = new SlidingDelayAction(1000, RefreshA);
             DelayedImageRefresh = new SlidingDelayAction(700, RefreshImage);
             LoadImageExtensions();
-            LoadGrpPrefixes();
+            LoadNameTemplates();
         }
 
         void LoadImageExtensions() {
@@ -246,28 +277,44 @@ namespace MediOrg.Models {
             }
         }
 
-        void LoadGrpPrefixes() {
-            this.GrpPrefixes.Clear();
-            string dflt = "{0:yyyy-MM-dd HH}";
-            this.CurrentGrpPrefix = new CodeValuePair(dflt, "Date+h24");
-            this.GrpPrefixes.AddItems(
-                this.CurrentGrpPrefix,
-                new CodeValuePair("{0:yyyy-MM-dd}", "Date"),
-                new CodeValuePair("", "None")
-                );
+         void LoadNameTemplates() {
+            this.NameTemplates.Clear();
+            this.NameTemplates.AddItems(
+                new CodeValuePair("Date-Mrk-N-Group", "@FileDate @Marker@Counter @GroupName"),
+                new CodeValuePair("Date-Group-FileName", "@FileDate @GroupName @FileName"),
+                new CodeValuePair("Date-Mrk-Group-N", "@FileDate @Marker@GroupName @Counter")
+            );
+
+            char[] seps = new char[] { '|' };
+            foreach(var t in (from ci in AppContext.Current.EnumerateAppCfgItems((k)=>k.StartsWith("fnmt.")) orderby ci.Code select ci)) {
+                string[] parts = (t.Value ?? "").Split(seps, 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length==2) { // Consider only valid definitions
+                    this.NameTemplates.Add(new CodeValuePair(parts[0].Trim(), parts[1].Trim()));
+                }
+            }
+            this.CurrentTemplate = this.NameTemplates[0];
         }
+
+        #endregion
 
         #region Commands
         public ICommand CmdSelectSourceFolder { get; protected set; }
         public ICommand CmdApply { get; protected set; }
+        public ICommand CmdStartGroup { get; protected set; }
+        //public ICommand CmdEndGroup { get; protected set; }
+        public ICommand CmdAddToPreviousGroup { get; protected set; }
+        public ICommand CmdAddToNextGroup { get; protected set; }
 
         public void InitCommands() {
-            this.CmdSelectSourceFolder = new DelegateCommand(SelectFolder);
-            this.CmdApply = new DelegateCommand(Apply, ()=>PCtx!=null);
+            this.CmdSelectSourceFolder = new DelegateCommand(DoSelectFolder);
+            this.CmdApply = new DelegateCommand(DoApply, ()=>PCtx!=null);
+            this.CmdStartGroup = new DelegateCommand(DoStartGroup, () => this.CurrentFileDsc != null);
+            this.CmdAddToPreviousGroup = new DelegateCommand(DoAddToPreviousGroup, () => this.CurrentGroup != null);
+            this.CmdAddToNextGroup = new DelegateCommand(DoAddToNextGroup, () => this.CurrentGroup != null);
         }
         #endregion
 
-        void SelectFolder() {
+        void DoSelectFolder() {
             string src = this.CurrentFolder;
             if (AppContext.Current.GetServiceViaLocator<IUIHelper>().SelectFolder("Select source folder", ref src)) {
                 this.CurrentFolder = src;
@@ -275,7 +322,7 @@ namespace MediOrg.Models {
             }
         }
 
-        void Apply() {
+        void DoApply() {
             this.Status.SetNeutral("Working...");
             if (this.PCtx != null) {
                 var q = GetTargetFiles();
@@ -286,7 +333,7 @@ namespace MediOrg.Models {
                     do {
                         try {
                             fnSrc = Path.Combine(PCtx.CurrentFolder, f.Name);
-                            fnTrg = Path.Combine(PCtx.CurrentFolder, Path.ChangeExtension(f.NewTitle, f.Extension));
+                            fnTrg = Path.Combine(PCtx.CurrentFolder, f.NewTitle+f.Extension);
                             File.Move(fnSrc, fnTrg);
                             f.Name = Path.GetFileName(fnTrg);
                             f.Title = Path.GetFileNameWithoutExtension(f.Name);
@@ -309,6 +356,83 @@ namespace MediOrg.Models {
                 }
             }
             this.Status.SetPositive("Done!");
+        }
+
+        void DoStartGroup() {
+            var cfl = this.CurrentFileDsc;
+            if (cfl!=null) {
+                var cgrp = cfl.Group;
+                int ix = this.FileGroups.IndexOf(cgrp);
+                var ngrp = new FileGroupDsc() {
+                    GrpName = GetNextGrpName(cgrp),
+                     StartTime= new DateTimeRef(cfl.FileTime),
+                     EndTime= new DateTimeRef(cgrp.EndTime.Value),
+                     IsManual= true
+                };
+                this.FileGroups.Insert(ix + 1, ngrp);
+                cgrp.EndTime = new DateTimeRef(cfl.FileTime.AddMilliseconds(-1));
+                var qg = from f in this.Files where object.ReferenceEquals(f.Group,cgrp) select f;
+                var cgMaxTm = cgrp.StartTime.Value; //need get more accurate endtime for the old group
+                int cgn = 0, ngn = 0;
+                foreach(var f in qg) {
+                    if (f.FileTime<cgrp.EndTime.Value) {
+                        cgn++;
+                        if (cgMaxTm < f.FileTime)
+                            cgMaxTm = f.FileTime;
+                    }
+                    else {
+                        ngn++;
+                        f.Group = ngrp;
+                    }
+                }
+                cgrp.Count = cgn;
+                cgrp.EndTime.Value = cgMaxTm;
+                ngrp.Count = ngn;
+                PrepareNames();
+                this.CurrentGroup = ngrp;
+            }
+        }
+
+        string GetNextGrpName(FileGroupDsc grp) {
+            return grp.GrpName + ".a";
+        }
+
+        void DoAddToPreviousGroup() {
+            var cgrp = this.CurrentGroup;
+            if (cgrp == null) return;
+            int ix = this.FileGroups.IndexOf(cgrp);
+            if (ix < 1) return; // there is no previous group
+            var pgrp = this.FileGroups[ix - 1];
+            foreach(var f in this.EnumerateGroupFiles(cgrp)) {
+                f.Group = pgrp;
+            }
+            pgrp.IsManual = true;
+            pgrp.Count += cgrp.Count;
+            pgrp.EndTime = cgrp.EndTime;
+            this.CurrentGroup = pgrp;
+            this.FileGroups.Remove(cgrp);
+            Status.SetPositive(string.Format("Group \"{0}\" starting at {1:yyyy-MM-dd HH:mm:ss} has been added to \"{2}\"", 
+                cgrp.GrpName, cgrp.StartTime.Value, pgrp.GrpName));
+            PrepareNames();
+        }
+
+        void DoAddToNextGroup() {
+            var cgrp = this.CurrentGroup;
+            if (cgrp == null) return;
+            int ix = this.FileGroups.IndexOf(cgrp);
+            if ((ix < 0)||((ix+1)>=this.FileGroups.Count)) return; // there is no next group
+            var pgrp = this.FileGroups[ix + 1];
+            foreach (var f in this.EnumerateGroupFiles(cgrp)) {
+                f.Group = pgrp;
+            }
+            pgrp.IsManual = true;
+            pgrp.Count += cgrp.Count;
+            pgrp.StartTime = cgrp.StartTime;
+            this.CurrentGroup = pgrp;
+            this.FileGroups.Remove(cgrp);
+            Status.SetPositive(string.Format("Group \"{0}\" ending at {1:yyyy-MM-dd HH:mm:ss} has been added to \"{2}\"",
+                cgrp.GrpName, cgrp.StartTime.Value, pgrp.GrpName));
+            PrepareNames();
         }
 
         void OnFolderChange(string newTarget) {
@@ -379,21 +503,26 @@ namespace MediOrg.Models {
                 Dictionary<string, string> rgNames = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
                 int ix = this.CntSeed;
                 string txNm;
-                string nmFmt = string.Format("{{0}} {{1:{0}}}", this.CounterFormat);
-                string pfxFmt = this.CurrentGrpPrefix.Code;
-                StringBuilder sb = new StringBuilder();
+                DateTime dtn;
+                TimeSpan dtDlt = this.TimeShift.HasValue ? this.TimeShift.Value : TimeSpan.Zero;
+                StringBuilder template = new StringBuilder(this.CurrentTemplate.Value); // @FileDate @Counter @GroupName @FileName
+                template = template.Replace("@FileDate", "{0:yyyy-MM-dd}")
+                    .Replace("@Counter", string.Format("{{1:{0}}}", this.CounterFormat))
+                    .Replace("@GroupName", "{2}")
+                    .Replace("@FileName", "{3}")
+                    .Replace("@Marker", this.SourceMarker??string.Empty);
+
+
+                string nmFmt = template.ToString();
                 foreach (var f in q) {
                     if (rgNames.TryGetValue(f.Title, out txNm)) {
                         f.NewTitle = txNm;
                     }
                     else {
-                        sb.Clear();
-                        if (!string.IsNullOrEmpty(pfxFmt)) {
-                            sb.AppendFormat(pfxFmt, f.FileTime);
-                            sb.Append(' ');
-                        }
-                        sb.AppendFormat(nmFmt, f.Group.GrpName, ix++);
-                        f.NewTitle = sb.ToString();
+                        dtn = f.FileTime;
+                        if (dtDlt != TimeSpan.Zero)
+                            dtn += dtDlt;
+                        f.NewTitle = string.Format(nmFmt, dtn, ix++, f.Group.GrpName, f.Title);
                         rgNames[f.Title] = f.NewTitle;
                     }
                 }
@@ -411,6 +540,10 @@ namespace MediOrg.Models {
 
         void RefreshA() {
             this.RunOnUIThread(RefreshGroups);
+        }
+
+        IEnumerable<FileDsc> EnumerateGroupFiles(FileGroupDsc fgrp) {
+            return (from f in this.Files where object.ReferenceEquals(f.Group, fgrp) select f);
         }
 
         void RefreshImage() {
@@ -453,6 +586,30 @@ namespace MediOrg.Models {
             if (this.CurrentFileDsc!=null) {
                 System.Diagnostics.Process.Start(Path.Combine(PCtx.CurrentFolder, this.CurrentFileDsc.Name));
             }
+        }
+
+        /// <summary>
+        /// Find first file in the specified group
+        /// </summary>
+        /// <param name="grp"></param>
+        /// <returns></returns>
+        public FileDsc FindFirstFileForTheGroup(FileGroupDsc grp) {
+            if (this.Files!=null) {
+                return this.EnumerateGroupFiles(grp).FirstOrDefault();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Find first image file in the specified group
+        /// </summary>
+        /// <param name="grp"></param>
+        /// <returns></returns>
+        public FileDsc FindFirstImageForTheGroup(FileGroupDsc grp) {
+            if (this.Files != null) {
+                return this.EnumerateGroupFiles(grp).FirstOrDefault((fl)=> _imgExtensions.Contains(fl.Extension));
+            }
+            return null;
         }
 
         public override ICommand FindCommand(Func<ICommand, bool> filter) {

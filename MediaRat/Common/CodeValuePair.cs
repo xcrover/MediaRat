@@ -127,4 +127,69 @@ namespace Ops.NetCoe.LightFrame {
         
     }
 
+    public class CodeValueList : List<CodeValuePair> {
+        ///<summary>String comparison</summary>
+        private StringComparison _strComparison = StringComparison.OrdinalIgnoreCase;
+
+        ///<summary>String comparison</summary>
+        public StringComparison StrComparison {
+            get { return this._strComparison; }
+            set { this._strComparison = value; }
+        }
+
+        public CodeValueList() { }
+
+        public CodeValueList(IEnumerable<CodeValuePair> source) : base(source) { }
+
+        /// <summary>
+        /// Try to find pair by code
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="rz"></param>
+        /// <returns></returns>
+        public bool TryFind(string code, out CodeValuePair rz) {
+            foreach (var p in this) {
+                if (code.Equals(p.Code, this.StrComparison)) {
+                    rz = p;
+                    return true;
+                }
+            }
+            rz = null;
+            return false;
+        }
+
+        /// <summary>
+        /// If code exists then value is overriden; otherwise new pair is added
+        /// </summary>
+        /// <param name="code">Code</param>
+        /// <param name="val">Value</param>
+        /// <returns></returns>
+        public CodeValuePair Ensure(string code, string val) {
+            CodeValuePair cvp;
+            if (TryFind(code, out cvp)) {
+                cvp.Value = val;
+                return cvp;
+            }
+            else {
+                cvp = new CodeValuePair(code, val);
+                this.Add(cvp);
+                return cvp;
+            }
+        }
+
+        /// <summary>
+        /// Ensure value if it is not null or empty
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public CodeValuePair EnsureIf(string code, object val) {
+            if (val != null) {
+                var sval = val.ToString();
+                if (!string.IsNullOrEmpty(sval))
+                    return this.Ensure(code, val.ToString());
+            }
+            return null;
+        }
+    }
 }

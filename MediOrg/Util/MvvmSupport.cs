@@ -1420,5 +1420,26 @@ namespace Ops.NetCoe.LightFrame {
         }
 
     }
+
+    public class TimeSpanNConverter : IValueConverter {
+        const string tsFmt = @"c";
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
+            if (value == null) return null;
+            TimeSpan ts = (TimeSpan)value;
+            return ts.ToString(tsFmt);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
+            if (value == null) return null;
+            var src = value.ToString();
+            if (string.IsNullOrEmpty(src)) return null;
+            TimeSpan rz;
+            if (TimeSpan.TryParseExact(src, "c", culture, out rz))
+                return rz;
+            throw new BizException("Timespan must be in format [-]D.HH:MM:SS");
+        }
+
+    }
+
     #endregion
 }

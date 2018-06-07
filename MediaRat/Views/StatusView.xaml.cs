@@ -79,5 +79,10 @@ namespace XC.MediaRat.Views {
             }
         }
 
+        private void _statusMessage_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+            var vm = this.Model;
+            if (vm != null)
+                vm.Clear();
+        }
     }
 }

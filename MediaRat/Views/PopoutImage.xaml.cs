@@ -83,5 +83,18 @@ namespace XC.MediaRat.Views {
             //_scale.ScaleY = _view.Height / _picPreview.Source.Height;
         }
 
+        private void _scaleK_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+            ImageProjectVModel pvm = this._view.DataContext as ImageProjectVModel;
+            if (pvm != null)
+                pvm.Scale.SetDefaultPos();
+        }
+
+        private void _picPreview_MouseDown(object sender, MouseButtonEventArgs e) {
+            if ((e.ChangedButton == MouseButton.Left) && (e.ClickCount == 2)) {
+                ImageProjectVModel pvm = this._view.DataContext as ImageProjectVModel;
+                if (pvm != null)
+                    pvm.OpenMediaCmd.ExecuteIfCan();
+            }
+        }
     }
 }

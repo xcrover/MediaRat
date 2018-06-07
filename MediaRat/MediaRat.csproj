@@ -91,6 +91,8 @@
     <Compile Include="Data\MediaProject.cs" />
     <Compile Include="Data\StartupOptions.cs" />
     <Compile Include="Data\TextTrans.cs" />
+    <Compile Include="Data\UiCues.cs" />
+    <Compile Include="Data\UiCueSelector.cs" />
     <Compile Include="Data\VideoProject\AudioTrack.cs" />
     <Compile Include="Data\VideoProject\ImageTrack.cs" />
     <Compile Include="Data\VideoProject\IContentSource.cs" />

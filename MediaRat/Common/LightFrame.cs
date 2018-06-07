@@ -1373,6 +1373,20 @@ namespace Ops.NetCoe.LightFrame {
             }
         }
 
+        /// <summary>
+        /// Gets the attribute value.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="attrName">Name of the attr.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns></returns>
+        public static bool GetAttributeBool(this XElement source, XName attrName, bool defaultValue= false) {
+            if (source == null) return defaultValue;
+            XAttribute xa = source.Attribute(attrName);
+            if (xa == null) return defaultValue;
+            else return (bool)xa;
+        }
+
 
         /// <summary>
         /// Gets the attribute value.
@@ -1401,6 +1415,91 @@ namespace Ops.NetCoe.LightFrame {
             if (xa == null) return defaultValue;
             else return (int)xa;
         }
+
+        public static XAttribute AddAttributeIf(this XElement trg, XName attrName, int? val) {
+            if (val.HasValue) {
+                var xa = new XAttribute(attrName, val.Value);
+                trg.Add(xa);
+                return xa;
+            }
+            return null;
+        }
+
+
+        /// <summary>
+        /// Gets the int attribute value.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="attrName">Name of the attribute.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns></returns>
+        public static DateTime? GetAttributeDt(this XElement source, XName attrName, DateTime? defaultValue = null) {
+            if (source == null) return defaultValue;
+            XAttribute xa = source.Attribute(attrName);
+            if (xa == null) return defaultValue;
+            else return (DateTime)xa;
+        }
+
+
+        public static XAttribute AddAttributeIf(this XElement trg, XName attrName, DateTime? val) {
+            if (val.HasValue) {
+                var xa = new XAttribute(attrName, val.Value);
+                trg.Add(xa);
+                return xa;
+            }
+            return null;
+        }
+
+
+        public static XAttribute AddAttributeIf(this XElement trg, XName attrName, string val) {
+            if (!string.IsNullOrEmpty(val)) {
+                var xa = new XAttribute(attrName, val);
+                trg.Add(xa);
+                return xa;
+            }
+            return null;
+        }
+
+
+        /// <summary>
+        /// Gets the double attribute value.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="attrName">Name of the attribute.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns></returns>
+        public static double? GetAttributeDbl(this XElement source, XName attrName, double? defaultValue = null) {
+            if (source == null) return defaultValue;
+            XAttribute xa = source.Attribute(attrName);
+            if (xa == null) return defaultValue;
+            else return (double)xa;
+        }
+
+
+        public static XAttribute AddAttributeIf(this XElement trg, XName attrName, double? val) {
+            if (val.HasValue) {
+                var xa = new XAttribute(attrName, val.Value);
+                trg.Add(xa);
+                return xa;
+            }
+            return null;
+        }
+
+
+        /// <summary>
+        /// Gets the uint attribute value.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="attrName">Name of the attribute.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <returns></returns>
+        public static uint? GetAttributeUInt(this XElement source, XName attrName, uint? defaultValue = null) {
+            if (source == null) return defaultValue;
+            XAttribute xa = source.Attribute(attrName);
+            if (xa == null) return defaultValue;
+            else return (uint)xa;
+        }
+
 
         /// <summary>
         /// Gets the time span attribute value.

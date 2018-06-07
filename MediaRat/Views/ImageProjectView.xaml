@@ -49,8 +49,10 @@
             <Grid.Resources>
                 <!-- Templates for Image and media player -->
                 <DataTemplate x:Key="ImagePresenter">
-                    <Image Name="_picPreview" Source="{Binding Path=CachedImages.CurrentImage.Content}" Stretch="Uniform" MinWidth="60" ToolTip="{Binding CachedImages.CurrentImage.FileName}"
-                           Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                    <Image Name="_picPreview" Source="{Binding Path=CachedImages.CurrentImage.Content}" Stretch="Uniform" MinWidth="60" 
+                           ToolTip="{Binding CachedImages.CurrentImage.FileName}"
+                           Visibility="{Binding Path=IsImageSelected, Converter={StaticResource BoolToVisibilityConverter}}" 
+                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MouseDown="_picPreview_MouseDown"/>
                 </DataTemplate>
                 
                 <DataTemplate x:Key="VideoPresenter">
@@ -101,10 +103,62 @@
                         </lfrm:MappingConverter.Items>
                     </lfrm:MappingConverter>
 
+                    <Style x:Key="uicDefault">
+                    </Style>
+
+                    <Style x:Key="uicTrash" TargetType="{x:Type TextBlock}">
+                        <Setter Property="TextDecorations" Value="Strikethrough"/>
+                        <Setter Property="Foreground" Value="{DynamicResource RemarkFontColor}"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle1" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="LightGreen"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle2" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="Aquamarine"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle3" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="Yellow"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle4" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="Khaki"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle5" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="Thistle"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle6" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="LightBlue"/>
+                    </Style>
+
+                    <Style x:Key="uicStyle7" TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="LightCoral"/>
+                    </Style>
+
+
+                    <lfrm:MappingConverter x:Key="UiCueMap" UseStringKey="True" DefaultResult="{StaticResource uicDefault}">
+                        <lfrm:MappingConverter.Items>
+                            <lfrm:MappingConverterItem Source="Default" Target="{StaticResource uicDefault}"/>
+                            <lfrm:MappingConverterItem Source="Trash" Target="{StaticResource uicTrash}"/>
+                            <lfrm:MappingConverterItem Source="Style1" Target="{StaticResource uicStyle1}"/>
+                            <lfrm:MappingConverterItem Source="Style2" Target="{StaticResource uicStyle2}"/>
+                            <lfrm:MappingConverterItem Source="Style3" Target="{StaticResource uicStyle3}"/>
+                            <lfrm:MappingConverterItem Source="Style4" Target="{StaticResource uicStyle4}"/>
+                            <lfrm:MappingConverterItem Source="Style5" Target="{StaticResource uicStyle5}"/>
+                            <lfrm:MappingConverterItem Source="Style6" Target="{StaticResource uicStyle6}"/>
+                            <lfrm:MappingConverterItem Source="Style7" Target="{StaticResource uicStyle7}"/>
+                        </lfrm:MappingConverter.Items>
+                    </lfrm:MappingConverter>
+
+
                 </TabControl.Resources>
                 <TabItem Header="Media">
                     <DataGrid Name="_media"  Style="{DynamicResource SearchResultGrid}" ItemsSource="{Binding Path=MediaItems}" AllowDrop="True" Drop="_media_Drop"
-                      SelectedItem="{Binding Path=CurrentMedia}" IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False" >
+                      SelectedItem="{Binding Path=CurrentMedia}" IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False" MouseDoubleClick="_media_MouseDoubleClick" >
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="M" Binding="{Binding MediaType, Converter={StaticResource MediaTypeSymbol}}" 
                                                 Foreground="{DynamicResource GridHeaderFontColor}"
@@ -112,7 +166,9 @@
                             <DataGridTemplateColumn Header="Use" SortMemberPath="IsMarked" ClipboardContentBinding="{Binding IsMarked}" IsReadOnly="False">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsMarked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        <CheckBox IsChecked="{Binding IsMarked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                  ToolTip="{Binding UiCue}"
+                                                  VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                              </DataGridTemplateColumn>
@@ -120,7 +176,10 @@
                             <DataGridTemplateColumn Header="File" SortMemberPath="Title" ClipboardContentBinding="{Binding Title}" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" MouseMove="_media_BeginDrag"/>
+                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" 
+                                                   ToolTip="{Binding FullName}" MouseMove="_media_BeginDrag"
+                                                   Style="{Binding UiCue, Converter={StaticResource UiCueMap}}"
+                                                   />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -132,6 +191,7 @@
                             <DataGridCheckBoxColumn Header="Chk" Binding="{Binding IsLocated}" SortMemberPath="IsLocated" Width="Auto" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Marker" Binding="{Binding Marker}" Width="Auto" IsReadOnly="True" />
                             <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="Auto" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Tech" Binding="{Binding TechDescription}" Width="Auto" IsReadOnly="True" Foreground="{DynamicResource RemarkFontColor}" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
@@ -153,6 +213,27 @@
                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" MinHeight="50" VerticalAlignment="Stretch" AcceptsReturn="True" AcceptsTab="True" />
                     </Grid>
                 </TabItem>
+                <TabItem Header="Settings">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Label>Settings:</Label>
+                        <ToolBar Grid.Column="2" HorizontalAlignment="Right">
+                            <Button Name="_pbApplyXSettings" Style="{DynamicResource ToolbarCommandButton}" Width="40" MinWidth="20" 
+                                    Margin="0,0,2,4" Command="{Binding Path=ApplyXSettingsCmd}" Content="Apply" ToolTip="Apply settings"/>
+                        </ToolBar>
+                        <TextBox Name="_xsettings" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Text="{Binding XSettingsTxt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                            VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" MinHeight="50" VerticalAlignment="Stretch" AcceptsReturn="True" AcceptsTab="True" />
+                    </Grid>
+                </TabItem>
+
                 <TabItem Header="Source">
                     <Grid>
                         <Grid.ColumnDefinitions>

@@ -15,12 +15,12 @@ namespace MediOrg.Models {
         private DateTime _fileTime;
 
         ///<summary>File time</summary>
-        public DateTime fileTime {
+        public DateTime FileTime {
             get { return this._fileTime; }
             set {
                 if (this._fileTime != value) {
                     this._fileTime = value;
-                    this.FirePropertyChanged(nameof(fileTime));
+                    this.FirePropertyChanged(nameof(FileTime));
                 }
             }
         }
